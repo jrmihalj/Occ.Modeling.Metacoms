@@ -4,9 +4,8 @@ model {
 ############ ASSIGN PRIORS ############
 #######################################
 #-------------------------------------------------------------------------------
-## Metacommunity-wide average of parameters: omega, psi, p, phi, gamma:
+## Metacommunity-wide average of parameters: psi, p, phi, gamma:
 
-omega ~ dbeta(1,1) # Probability of being included in the metacommunity
 psiMean ~ dbeta(1,1) # Occurrence probability
 
 for (t in 1:T) { # T = number of years sampled. 
@@ -76,8 +75,7 @@ for (i in 1:(n)) { # n=number of species (would be n+nzeros if non-surveyed spec
                    #                      considered)
 
 ## Initial occupancy state at t=1
-w[i] ~ dbern(omega) # Species- and year- specific probability of being included in the 
-                    # metacommunity
+
 b0[i] ~ dnorm(lpsiMean, lpsiPrec)T(-6,6) # Species-specific baseline of occurrence prob.
   
 ## Species-specific covariate effects on occurrence:
@@ -91,10 +89,10 @@ p[i,1] <- 1/(1+exp(-lp[i,1])) # Manual anti-logit
   for (k in 1:K) {
     lpsi[i,k,1] <- b0[i] + inprod(b[i, ], x[k, ,1]) # Year-specific covariate values
     psi[i,k,1] <- 1/(1 + exp(-lpsi[i,k,1]))
-    mu.z[i,k,1] <- w[i] * psi[i,k,1]
+    mu.z[i,k,1] <- psi[i,k,1]
     z[i,k,1] ~ dbern(mu.z[i,k,1])
     mu.y[i,k,1] <- p[i,1]*z[i,k,1]
-    y[i,k,1] ~ dbin(mu.y[i,k,1], J[k, 1]) # J=number of hosts sampled from each site
+    y[i,k,1] ~ dbin(mu.y[i,k,1], J) # J=number of hosts sampled from each site
   }
 
 ## Model of changes in occupancy state for t=2, ..., T
@@ -116,10 +114,10 @@ p[i,1] <- 1/(1+exp(-lp[i,1])) # Manual anti-logit
         lphi[i,k,t] <- d0[i,t] + inprod(d[i,t, ], x[k, ,t])
         phi[i,k,t] <-  1/(1+exp(-lphi[i,k,t]))
         psi[i,k,t+1] <- phi[i,k,t] * psi[i,k,t] + gam[i,k,t] * (1 - psi[i,k,t])
-        mu.z[i,k,t+1] <- w[i] * (phi[i,k,t] * z[i,k,t] + gam[i,k,t] * (1-z[i,k,t]))
+        mu.z[i,k,t+1] <- (phi[i,k,t] * z[i,k,t] + gam[i,k,t] * (1-z[i,k,t]))
         z[i,k,t+1] ~ dbern(mu.z[i,k,t+1])
         mu.y[i,k,t+1] <- p[i,t+1] * z[i,k,t+1]
-        y[i,k,t+1] ~ dbin(mu.y[i,k,t+1], J[k, t+1])
+        y[i,k,t+1] ~ dbin(mu.y[i,k,t+1], J)
       } 
     }
 } 
