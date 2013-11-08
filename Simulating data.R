@@ -11,10 +11,10 @@
 # rho = prob detection (no covariates assumed here)
 
 # Establish basic parameters for the simulation:
-n <- 10 # Number of species
+n <- 6 # Number of species
 K <- 100 # Number of sites
 J <- 5  # Number of sampling replicates per site, per time period
-Ts <- 3 # Number of sampling time points
+Ts <- 4 # Number of sampling time points
 ncov <- 3 # Number of covariates in model
 
 #---------------------------------------------------------------------------------
@@ -35,7 +35,7 @@ AntiLogit <- function(x){
 # Establish community-level hyperparameters
 p_b <- 0.7 # community-level probability of occurrence
 mu_b <- Logit(p_b)
-sd_b <- 2 # standard dev. b
+sd_b <- 1 # standard dev. b
 
 p_c <- 0.3 # community-level probability of colonization
 mu_c <- Logit(p_c)
@@ -43,11 +43,11 @@ sd_c <- 2
 
 p_d <- 0.6 # community-level probability of persistence per year
 mu_d <- Logit(p_d)
-sd_d <- 4
+sd_d <- 2
 
 p_rho <- 0.8 # community-level probability of detection
 mu_rho <- Logit(p_rho)
-sd_rho <- 2 
+sd_rho <- 1 
 
 #---------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------
@@ -91,7 +91,7 @@ for(i in 1:n){
 
 #---------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------
-# Establish covariate values:
+# Establish covariate values, changing through time:
 X <- array(0, dim=c(K, ncov, Ts))
 
 for(k in 1:K){
@@ -160,8 +160,6 @@ jags_d <- list(x=X,
                n=n,
                J=J)
 
-library(rjags)
-
 #---------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------
 # Set initial parameters:
@@ -176,19 +174,13 @@ for (i in 1:n) {
   }
 }
 
-inits <- function(){
-  list(lpsiPrec=runif(1, 0, 0.1),
-       lphiPrec=runif(Ts-1, 0, 0.1),
-       lgamPrec=runif(Ts-1, 0, 0.1),
-       lpPrec=runif(Ts, 0, 0.1),
-       z=zinit)
-}
-
 #---------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------
 # Start the model
-mod <- jags.model(file = "OccModel.txt", data = jags_d, n.chains = 3, n.adapt=10,
-                  inits = inits)
+library(rjags)
+
+mod <- jags.model(file = file.choose(), data = jags_d, n.chains = 3, n.adapt=10,
+                  inits = list(z=zinit))
 
 out <- coda.samples(mod, n.iter = 10000, variable.names = c("b0", "b"))
 summary(out)

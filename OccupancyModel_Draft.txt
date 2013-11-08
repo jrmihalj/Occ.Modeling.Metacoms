@@ -6,16 +6,16 @@ model {
 #-------------------------------------------------------------------------------
 ## Metacommunity-wide average of parameters: omega, psi, p, phi, gamma:
 
-omega ~ dunif(0,1) 
-psiMean ~ dunif(0,1) # Occurrence probability
+omega ~ dbeta(1,1) # Probability of being included in the metacommunity
+psiMean ~ dbeta(1,1) # Occurrence probability
 
 for (t in 1:T) { # T = number of years sampled. 
-  pMean[t] ~ dunif(0,1) # Year-specific detection probability
+  pMean[t] ~ dbeta(1,1) # Year-specific detection probability
 }
 
 for (t in 1:(T-1)) {
-  phiMean[t] ~ dunif(0,1) # Year-specific persistence probability
-  gamMean[t] ~ dunif(0,1) # Year-specific colonization probability
+  phiMean[t] ~ dbeta(1,1) # Year-specific persistence probability
+  gamMean[t] ~ dbeta(1,1) # Year-specific colonization probability
 }
 #-------------------------------------------------------------------------------
 ## Manual logit transformation of mean parameter values:
@@ -33,34 +33,39 @@ for (t in 1:(T-1)) {
 #-------------------------------------------------------------------------------
 ## Precision estimates for each metacommunity average:
 
-lpsiPrec ~ dgamma(0.0001, 0.0001)
+lpsiSD ~ dunif(0,10)
+lpsiPrec <- pow(lpsiSD,-2)
+lpSD ~ dunif(0,10)
+lphiSD ~ dunif(0,10)
+lgamSD ~ dunif(0,10)
 
 for (t in 1:T) {
-  lpPrec[t] ~ dgamma(0.0001, 0.0001)
+  lpPrec[t] <- pow(lpSD,-2)
 }
 
 for (t in 1:(T-1)) {
-  lphiPrec[t] ~ dgamma(0.0001, 0.0001)
-  lgamPrec[t] ~ dgamma(0.0001, 0.0001)
+  lphiPrec[t] <- pow(lphiSD,-2)
+  lgamPrec[t] <- pow(lgamSD,-2)
 }
 #-------------------------------------------------------------------------------
 ## Estimates for covariate effect means and precisions:
 
 for (cov in 1:ncovs) { # ncov = number of covariates. Assumes same number of covariates used 
                        #        to predict each parameter. Potentially need to adjust. 
-
-  bMean[cov] ~ dnorm(0, .01) # b = covariates for occurrence probability
-  bPrec[cov] ~ dgamma(0.0001, 0.0001)
+  bMean[cov] ~ dnorm(0,.01) # b = covariates for occurrence probability
+  bSD[cov] ~ dunif(0,10)
+  bPrec[cov] <- pow(bSD[cov],-2)
+  cSD[cov] ~ dunif(0,10)
+  dSD[cov] ~ dunif(0,10)
 }
 
-for (t in 1:(T-1)) { # These are year-specific estimates
+for (t in 1:(T-1)) { # Year-specific estimates.
   for (cov in 1:ncovs) {
     cMean[t,cov] ~ dnorm(0,.01) # c = covariates for colonization probability
     dMean[t,cov] ~ dnorm(0,.01) # d = covariates for persistence probability
-    cPrec[t,cov] ~ dgamma(0.0001, 0.0001)
-    dPrec[t,cov] ~ dgamma(0.0001, 0.0001)
-  } 
-}
+    cPrec[t,cov] <- pow(cSD[cov],-2)
+    dPrec[t,cov] <- pow(dSD[cov],-2)
+} }
 #-------------------------------------------------------------------------------
 #######################################
 ########## Likelihood Model ###########
@@ -73,14 +78,14 @@ for (i in 1:(n)) { # n=number of species (would be n+nzeros if non-surveyed spec
 ## Initial occupancy state at t=1
 w[i] ~ dbern(omega) # Species- and year- specific probability of being included in the 
                     # metacommunity
-b0[i] ~ dnorm(lpsiMean, lpsiPrec)T(-12,12) # Species-specific baseline of occurrence prob.
+b0[i] ~ dnorm(lpsiMean, lpsiPrec)T(-6,6) # Species-specific baseline of occurrence prob.
   
 ## Species-specific covariate effects on occurrence:
   for (cov in 1:ncovs) {
     b[i,cov] ~ dnorm(bMean[cov], bPrec[cov])
   }
 
-lp[i,1] ~ dnorm(lpMean[1], lpPrec[1])T(-12,12) # Species-specific detection prob at t=1
+lp[i,1] ~ dnorm(lpMean[1], lpPrec[1])T(-6,6) # Species-specific detection prob at t=1
 p[i,1] <- 1/(1+exp(-lp[i,1])) # Manual anti-logit
 
   for (k in 1:K) {
@@ -94,11 +99,11 @@ p[i,1] <- 1/(1+exp(-lp[i,1])) # Manual anti-logit
 
 ## Model of changes in occupancy state for t=2, ..., T
   for (t in 1:(T-1)) {
-    lp[i,t+1] ~ dnorm(lpMean[t+1], lpPrec[t+1])T(-12,12) 
+    lp[i,t+1] ~ dnorm(lpMean[t+1], lpPrec[t+1])T(-6,6) 
     p[i,t+1] <- 1/(1+exp(-lp[i,t+1])) # Species- and year-specific detection prob.
-    c0[i,t] ~ dnorm(lgamMean[t], lgamPrec[t])T(-12,12) # Species- and year-specific baseline 
+    c0[i,t] ~ dnorm(lgamMean[t], lgamPrec[t])T(-6,6) # Species- and year-specific baseline 
                                                        # coloniation probability 
-    d0[i,t] ~ dnorm(lphiMean[t], lphiPrec[t])T(-12,12) # Species- and year-specific baseline 
+    d0[i,t] ~ dnorm(lphiMean[t], lphiPrec[t])T(-6,6) # Species- and year-specific baseline 
                                                        # persistence probability
       ## Species- and year-specific covariate effects
       for (cov in 1:ncovs) {
