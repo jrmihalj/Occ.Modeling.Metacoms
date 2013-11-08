@@ -141,7 +141,7 @@ for(i in 1:n){
       # Psi[t+1] = persist * occupy[t] + colonize*(1-occupy[t])
       psi[i,k,t+1] <- phi[i,k,t] * psi[i,k,t] + gam[i,k,t] * (1 - psi[i,k,t])
       
-      z[i,k,t+1] <- dbinom(1, 1, phi[i,k,t] * z[i,k,t] + gam[i,k,t] * (1 - z[i,k,t]))
+      z[i,k,t+1] <- rbinom(1, 1, phi[i,k,t] * z[i,k,t] + gam[i,k,t] * (1 - z[i,k,t]))
       
       Y[i,k,t+1] <- rbinom(1, J, rho.spp[i] * z[i, k, t+1])
     } 
@@ -166,23 +166,18 @@ jags_d <- list(x=X,
 
 # Z values (unobserved):
 zinit <- Y
-for (i in 1:n) {
-  for (k in 1:K) {
-    for (t in 1:Ts) {
-      if(zinit[i, j, t] >= 1) zinit[i,j,t] <- 1
-    }
-  }
-}
+zinit <- ifelse(zinit > 0, 1, 0)
 
 #---------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------
 # Start the model
 library(rjags)
 
-mod <- jags.model(file = file.choose(), data = jags_d, n.chains = 3, n.adapt=10,
+mod <- jags.model(file = "OccupancyModel_Draft.txt", 
+                  data = jags_d, n.chains = 3, n.adapt=1000,
                   inits = list(z=zinit))
 
-out <- coda.samples(mod, n.iter = 10000, variable.names = c("b0", "b"))
+out <- coda.samples(mod, n.iter = 5000, variable.names = c("b0", "b"))
 summary(out)
 plot(out)
 
