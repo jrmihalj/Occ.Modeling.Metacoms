@@ -81,13 +81,16 @@ b0[i] ~ dnorm(lpsiMean, lpsiPrec)T(-6,6) # Species-specific baseline of occurren
 ## Species-specific covariate effects on occurrence:
   for (cov in 1:ncovs) {
     b[i,cov] ~ dnorm(bMean[cov], bPrec[cov])
+      for(k in 1:K){
+        temp.b[i, k, cov, 1] <- b[i, cov] * x[k, cov, 1]
+      }
   }
 
 lp[i,1] ~ dnorm(lpMean[1], lpPrec[1])T(-6,6) # Species-specific detection prob at t=1
 p[i,1] <- 1/(1+exp(-lp[i,1])) # Manual anti-logit
 
   for (k in 1:K) {
-    lpsi[i,k,1] <- b0[i] + inprod(b[i, ], x[k, ,1]) # Year-specific covariate values
+    lpsi[i,k,1] <- b0[i] + sum(temp.b[i, k, ,1]) # Year-specific covariate values
     psi[i,k,1] <- 1/(1 + exp(-lpsi[i,k,1]))
     mu.z[i,k,1] <- psi[i,k,1]
     z[i,k,1] ~ dbern(mu.z[i,k,1])
@@ -107,11 +110,16 @@ p[i,1] <- 1/(1+exp(-lp[i,1])) # Manual anti-logit
       for (cov in 1:ncovs) {
         c[i,t,cov] ~ dnorm(cMean[t,cov], cPrec[t,cov])
         d[i,t,cov] ~ dnorm(dMean[t,cov], dPrec[t,cov])
+          for(k in 1:K){
+            temp.c[i, t, k, cov] <- c[i, t, cov] * x[k, cov, t]
+            temp.d[i, t, k, cov] <- d[i, t, cov] * x[k, cov, t]
+        }
       }
+      
       for (k in 1:K) { # K=number of sites
-        lgam[i,k,t] <- c0[i,t] + inprod(c[i,t, ], x[k, ,t])
+        lgam[i,k,t] <- c0[i,t] + sum(temp.c[i, t, k, ])
         gam[i,k,t] <-  1/(1+exp(-lgam[i,k,t]))
-        lphi[i,k,t] <- d0[i,t] + inprod(d[i,t, ], x[k, ,t])
+        lphi[i,k,t] <- d0[i,t] + sum(temp.d[i, t, k, ])
         phi[i,k,t] <-  1/(1+exp(-lphi[i,k,t]))
         psi[i,k,t+1] <- phi[i,k,t] * psi[i,k,t] + gam[i,k,t] * (1 - psi[i,k,t])
         mu.z[i,k,t+1] <- (phi[i,k,t] * z[i,k,t] + gam[i,k,t] * (1-z[i,k,t]))
