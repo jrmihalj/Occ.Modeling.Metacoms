@@ -37,6 +37,7 @@ p_b <- 0.7 # community-level probability of occurrence
 mu_b <- Logit(p_b)
 sd_b <- 1 # standard dev. b
 
+#### NEED TO MAKE THESE YEAR-SPECIFIC TO MATCH THE JAGS MODEL ###
 p_c <- 0.3 # community-level probability of colonization
 mu_c <- Logit(p_c)
 sd_c <- 2
@@ -173,11 +174,13 @@ zinit <- ifelse(zinit > 0, 1, 0)
 # Start the model
 library(rjags)
 
+params <- c("bMean", "bSD", "cMean", "cSD")
+
 mod <- jags.model(file = "OccupancyModel_Draft.txt", 
                   data = jags_d, n.chains = 3, n.adapt=1000,
                   inits = list(z=zinit))
 
-out <- coda.samples(mod, n.iter = 5000, variable.names = c("b0", "b"))
+out <- coda.samples(mod, n.iter = 3000, variable.names = params, thin=10)
 summary(out)
 plot(out)
 
