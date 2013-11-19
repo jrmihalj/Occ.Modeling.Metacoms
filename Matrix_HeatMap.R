@@ -1,4 +1,4 @@
-Matrix_HeatMap <- function(array, xlab="Parasite Species", ylab="Host Individuals"){
+Matrix_HeatMap <- function(array, xlab="Species", ylab="Site"){
   require(reshape2)
   require(ggplot2)
   
@@ -21,7 +21,7 @@ Matrix_HeatMap <- function(array, xlab="Parasite Species", ylab="Host Individual
   incidence <- ggplot(dataframe, aes(x=Species, y=Site, fill=Pres))+
     geom_tile(color=element_blank())+
     labs(x=xlab, y=ylab)+
-    scale_fill_gradient(low="white", high="black")+
+    scale_fill_gradient(low="yellow", high="red")+
     theme_classic()+
     theme(axis.text=element_blank(), axis.ticks=element_blank())+
     theme(legend.position="none")+
