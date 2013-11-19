@@ -1,0 +1,128 @@
+model {
+  #-------------------------------------------------------------------------------
+  #######################################
+  ############ ASSIGN PRIORS ############
+  #######################################
+  #-------------------------------------------------------------------------------
+  ## Metacommunity-wide average of parameters: omega, psi, p, phi, gamma:
+  
+  omega ~ dunif(0,1) 
+  psiMean ~ dunif(0,1) # Occurrence probability
+  
+  for (t in 1:T) { # T = number of years sampled. 
+    pMean[t] ~ dunif(0,1) # Year-specific detection probability
+  }
+  
+  for (t in 1:(T-1)) {
+    phiMean[t] ~ dunif(0,1) # Year-specific persistence probability
+    gamMean[t] ~ dunif(0,1) # Year-specific colonization probability
+  }
+  #-------------------------------------------------------------------------------
+  ## Manual logit transformation of mean parameter values:
+  
+  lpsiMean <- log(psiMean) - log(1-psiMean)
+  
+  for (t in 1:T) {
+    lpMean[t] <- log(pMean[t]) - log(1-pMean[t]) 
+  }
+  
+  for (t in 1:(T-1)) {
+    lphiMean[t] <- log(phiMean[t]) - log(1-phiMean[t]) 
+    lgamMean[t] <- log(gamMean[t]) - log(1-gamMean[t]) 
+  }
+  #-------------------------------------------------------------------------------
+  ## Precision estimates for each metacommunity average:
+  
+  lpsiSD ~ dunif(0,10)
+  lpsiPrec <- pow(lpsiSD,-2)
+  lpSD ~ dunif(0,10)
+  lphiSD ~ dunif(0,10)
+  lgamSD ~ dunif(0,10)
+  
+  for (t in 1:T) {
+    lpPrec[t] <- pow(lpSD,-2)
+  }
+  
+  for (t in 1:(T-1)) {
+    lphiPrec[t] <- pow(lphiSD,-2)
+    lgamPrec[t] <- pow(lgamSD,-2)
+  }
+  #-------------------------------------------------------------------------------
+  ## Estimates for covariate effect means and precisions:
+  
+  for (cov in 1:ncovs) { # ncov = number of covariates. Assumes same number of covariates used 
+    #        to predict each parameter. Potentially need to adjust. 
+    bMean[cov] ~ dnorm(0,.01) # b = covariates for occurrence probability
+    bSD[cov] ~ dunif(0,10)
+    bPrec[cov] <- pow(bSD[cov],-2)
+    cSD[cov] ~ dunif(0,10)
+    dSD[cov] ~ dunif(0,10)
+  }
+  
+  # I removed year-specific effects of covariates
+    for (cov in 1:ncovs) {
+      cMean[cov] ~ dnorm(0,.01) # c = covariates for colonization probability
+      dMean[cov] ~ dnorm(0,.01) # d = covariates for persistence probability
+      cPrec[cov] <- pow(cSD[cov],-2)
+      dPrec[cov] <- pow(dSD[cov],-2)
+    }
+  #-------------------------------------------------------------------------------
+  #######################################
+  ########## Likelihood Model ###########
+  #######################################
+  #-------------------------------------------------------------------------------
+  
+  for (i in 1:(n)) { # n=number of species (would be n+nzeros if non-surveyed species are 
+    #                      considered)
+    
+    ## Initial occupancy state at t=1
+    w[i] ~ dbern(omega) # Species-specific probability of being included in the metacommunity
+    b0[i] ~ dnorm(lpsiMean, lpsiPrec)T(-6,6) # Species-specific baseline of occurrence prob.
+    
+    ## Species-specific covariate effects on occurrence:
+    for (cov in 1:ncovs) {
+      b[i,cov] ~ dnorm(bMean[cov], bPrec[cov])
+    }
+    
+    lp[i,1] ~ dnorm(lpMean[1], lpPrec[1])T(-6,6) # Species-specific detection prob at t=1
+    p[i,1] <- 1/(1+exp(-lp[i,1])) # Manual anti-logit
+    
+    for (k in 1:K) {
+      lpsi[i,k,1] <- b0[i] + inprod(b[i, ], x[k, ,1]) # Year-specific covariate values
+      psi[i,k,1] <- 1/(1 + exp(-lpsi[i,k,1]))
+      mu.z[i,k,1] <- w[i] * psi[i,k,1]
+      z[i,k,1] ~ dbern(mu.z[i,k,1])
+      mu.y[i,k,1] <- p[i,1]*z[i,k,1]
+      y[i,k,1] ~ dbin(mu.y[i,k,1], J) # J=number of hosts sampled from each site
+    }
+    
+    ## Model of changes in occupancy state for t=2, ..., T
+    for (cov in 1:ncovs) {
+        c[i,cov] ~ dnorm(cMean[cov], cPrec[cov])
+        d[i,cov] ~ dnorm(dMean[cov], dPrec[cov])
+      }
+    
+    for (t in 1:(T-1)) {
+      lp[i,t+1] ~ dnorm(lpMean[t+1], lpPrec[t+1])T(-6,6) 
+      p[i,t+1] <- 1/(1+exp(-lp[i,t+1])) # Species- and year-specific detection prob.
+      c0[i,t] ~ dnorm(lgamMean[t], lgamPrec[t])T(-6,6) # Species- and year-specific baseline 
+      # coloniation probability 
+      d0[i,t] ~ dnorm(lphiMean[t], lphiPrec[t])T(-6,6) # Species- and year-specific baseline 
+      # persistence probability
+      ## Species- and year-specific covariate effects
+      
+      for (k in 1:K) { # K=number of sites
+        lgam[i,k,t] <- c0[i,t] + inprod(c[i, ], x[k, ,t])
+        gam[i,k,t] <-  1/(1+exp(-lgam[i,k,t]))
+        lphi[i,k,t] <- d0[i,t] + inprod(d[i, ], x[k, ,t])
+        phi[i,k,t] <-  1/(1+exp(-lphi[i,k,t]))
+        psi[i,k,t+1] <- phi[i,k,t] * psi[i,k,t] + gam[i,k,t] * (1 - psi[i,k,t])
+        mu.z[i,k,t+1] <- w[i] * (phi[i,k,t] * z[i,k,t] + gam[i,k,t] * (1-z[i,k,t]))
+        z[i,k,t+1] ~ dbern(mu.z[i,k,t+1])
+        mu.y[i,k,t+1] <- p[i,t+1] * z[i,k,t+1]
+        y[i,k,t+1] ~ dbin(mu.y[i,k,t+1], J)
+      } 
+    }
+  } 
+  
+}
