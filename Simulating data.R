@@ -184,7 +184,20 @@ out <- coda.samples(mod, n.iter = 3000, variable.names = params, thin=10)
 summary(out)
 plot(out)
 
+#---------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------
+# Try with the simplified model:
 
+library(rjags)
 
+params <- c("bMean", "bSD", "cMean", "cSD",
+            "b", "c", "d")
 
+mod.simp <- jags.model(file = "OccupancyModel_Simple.txt", 
+                  data = jags_d, n.chains = 3, n.adapt=1000,
+                  inits = list(z=zinit))
+
+out.simp <- coda.samples(mod.simp, n.iter = 5000, variable.names = params, thin=10)
+summary(out.simp)
+plot(out.simp)
 
