@@ -65,7 +65,7 @@ rho.spp <- AntiLogit(lrho.spp)
 
 # Establish covariate effects per species:
 # I will assume that occupancy is only potentially related to one covariate for each species.
-betas.b <- rnorm(N, 0, 1)
+betas.b <- rnorm(N, -1, 1)
 #betas.b <- runif(N, -4, 1)
 
 # Establish covariate values:
@@ -89,25 +89,26 @@ for(i in 1:N){
   }
 }
 
-# Visualize the ordinated matrix of this simulated data:
-Y2 <- aperm(Y, c(2, 1)) # Now sites are rows and species are columns
-Y2 <- ifelse(Y2 > 0, 1, 0) # Make sure we just have zeros/ones
-library(metacom)
 #Check row and column sums:
 zeros <- NULL
-for(i in 1:nrow(Y2)){
-  if(sum(Y2[i, ])==0) zeros <- c(zeros, i)
+for(i in 1:nrow(Y)){
+  if(sum(Y[i, ])==0) zeros <- c(zeros, i)
 }
-if(sum(zeros)>0) Y2 <- Y2[-zeros, ]
+zeros
+if(sum(zeros)>0) Y <- Y[-zeros, ]
 
 zeros <- NULL
-for(j in 1:ncol(Y2)){
-  if(sum(Y2[j, ])==0) zeros <- c(zeros, i)
+for(j in 1:ncol(Y)){
+  if(sum(Y[, j])==0) zeros <- c(zeros, j)
 }
-if(sum(zeros)>0) Y2 <- Y2[, -zeros]
+zeros
+if(sum(zeros)>0) Y <- Y[, -zeros]
 
+# Visualize observed structure
+library(metacom)
+Y2 <- aperm(Y, c(2, 1)) # Now sites are rows and species are columns
+Y2 <- ifelse(Y2 > 0, 1, 0)
 ordY <- OrderMatrix(Y2)
-
 quartz(height=6, width=3)
 print(Matrix_Plot(ordY, xlab="Species", ylab="Sites"))
 
@@ -121,8 +122,8 @@ print(Matrix_Plot(ordY, xlab="Species", ylab="Sites"))
 
 jags_d <- list(X=X,
                Y=Y,
-               K=K,
-               N=N,
+               K=ncol(Y),
+               N=nrow(Y),
                J=J)
 
 # Set initial parameters:
@@ -154,14 +155,14 @@ post.out <- ggs(out)
 ######## CONSTRUCT Z FROM BAYESIAN OUTPUT ##########
 ####################################################
 
-iter <- 40 # number of samples to draw from the posterior 
+iter <- 30 # number of samples to draw from the posterior 
 
 # Each chain has 300 observations (n.iter=3000, thinned by 10)
 # Choose which iterations will be used from the posterior
 samples <- sample(c(1:300), iter, replace=F)
 
 # Create storage for the output
-z.post <- array(0, dim=c(N, K, iter))
+z.post <- array(0, dim=c(nrow(Y), ncol(Y), iter))
 
 for(i in 1:iter){
   # Randomly choose from which chain the sample will originate
@@ -173,26 +174,75 @@ for(i in 1:iter){
   subset <- subset(post.out, Chain==chain & Iteration==samples[i])$value
   # Store this vector as a matrix
   z.mat <- NULL
-  z.mat <- matrix(subset, nrow=N, ncol=K, byrow=F)
+  z.mat <- matrix(subset, nrow=nrow(Y), ncol=ncol(Y), byrow=F)
   # Add matrix to the array
   z.post[, , i] <- z.mat
 }
+
+#---------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------
+
+####################################################
+######## CALCULATE METACOMMUNITY METRICS  ##########
+####################################################
 
 # Make sites rows and species columns:
 z.post <- aperm(z.post, c(2, 1, 3))
 
 # Ordinate all the z matrices:
-z.ord <- array(0, dim=c(K, N, iter))
 
 library(metacom)
+# Store the Ordinated Matrices:
+z.ord <- array(0, dim=c(ncol(Y), nrow(Y), iter))
+# Store the statistics for Coherence and Turnover.
+Coher <- array(0, dim=c(iter, 5))
+colnames(Coher) <- c("Emb", "z", "pval", "sim.mean", "sim.sd")
+Turn <- array(0, dim=c(iter, 5))
+colnames(Turn) <- c("Repl", "z", "pval", "sim.mean", "sim.sd")
+Bound <- array(0, dim=c(iter, 3))
+colnames(Bound) <- c("index", "pval", "df")
+
 for(i in 1:iter){
-  z.ord[, , i] <- OrderMatrix(z.post[, , i])
+  meta <- NULL
+  meta <- metacommunity(z.post[, , i], method="r1", sims=1000, allow.empty=T)
+  z.ord[, , i] <- meta[[1]]
+  Coher[i, ] <- as.numeric(as.character(meta[[2]][1:5, ]))
+  Turn[i, ] <- as.numeric(as.character(meta[[3]][1:5, ]))
+  for(j in 1:3){
+    Bound[i, j] <- meta[[4]][1,j]
+  }
 }
 
+# Generate heat map of ordinated matrices:
 quartz(height=6, width=3)
 print(Matrix_HeatMap(z.ord))
 
+# Generate density plots of posterior metacommunity metrics:
+Coher.plot <- ggplot(data.frame(Coher), aes(x=Emb))+
+                geom_density(kernel="biweight")+
+                theme_classic()
+Coher.plot
 
+Turn.plot <- ggplot(data.frame(Turn), aes(x=pval))+
+              geom_density(kernel="biweight")+
+              theme_classic()
+Turn.plot
+
+library(gridExtra)
+grob <- arrangeGrob(Coher.plot, Turn.plot, nrow=1)
+
+
+
+
+
+
+
+
+
+
+#---------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------
+######################   UNUSED CODE BELOW   ###################### 
 #---------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------
 
