@@ -16,12 +16,11 @@
 # General Methods:
 # - 1. Simulate data for a simple one-year, multi-species occupancy model
 #       - assume that occupancy is structured along a single environmental covariate
-# - 2. Use Bayesian approach to estimate posterior distribution of model parameters
-# - 3. Build a simulation model to simulate many ordinated incidence matrices, drawing upon
-#      the posterior distributions of the estimated parameters from the observed data-set
-# - 4. For each ordinated matrix, store z-values of coherence and turnover to build a 
-#      distribution of z-values for each EMS statistic
-# - 5. From all of the ordinated incidence matrices, generate a heat map of probable 
+# - 2. Use Bayesian approach to estimate posterior distribution of Z-matrix
+# - 3. Iteratively ordinate a subset of the posterior Z-matrices
+# - 4. For each ordinated matrix, store standardized scores for coherence and turnover 
+#      to build a posterior distribution for each EMS statistic
+# - 5. From all of the ordinated incidence matrices, generate a heat map of probable/true 
 #      metacommunity structure. 
 
 #---------------------------------------------------------------------------------
@@ -109,6 +108,7 @@ library(metacom)
 Y2 <- aperm(Y, c(2, 1)) # Now sites are rows and species are columns
 Y2 <- ifelse(Y2 > 0, 1, 0)
 ordY <- OrderMatrix(Y2)
+colnames(ordY) <- as.factor(1:ncol(ordY))
 quartz(height=6, width=3)
 print(Matrix_Plot(ordY, xlab="Species", ylab="Sites"))
 
@@ -215,21 +215,28 @@ for(i in 1:iter){
 
 # Generate heat map of ordinated matrices:
 quartz(height=6, width=3)
-print(Matrix_HeatMap(z.ord))
+print(Matrix_HeatMap(z.ord, ylab="Sites"))
 
 # Generate density plots of posterior metacommunity metrics:
-Coher.plot <- ggplot(data.frame(Coher), aes(x=Emb))+
+Coher.plot <- ggplot(data.frame(Coher), aes(x=z))+
                 geom_density(kernel="biweight")+
+                labs(x="Coherence z-score", y="Density")+
                 theme_classic()
-Coher.plot
 
-Turn.plot <- ggplot(data.frame(Turn), aes(x=pval))+
+Turn.plot <- ggplot(data.frame(Turn), aes(x=z))+
               geom_density(kernel="biweight")+
+              labs(x="Turnover z-score", y="")+
               theme_classic()
-Turn.plot
+
+Bound.plot <- ggplot(data.frame(Bound), aes(x=index))+
+                geom_density(kernel="biweight")+
+                labs(x="Morista's I", y="")+
+                theme_classic()
 
 library(gridExtra)
-grob <- arrangeGrob(Coher.plot, Turn.plot, nrow=1)
+grob <- arrangeGrob(Coher.plot, Turn.plot, Bound.plot, nrow=1)
+quartz(height=5, width=9)
+print(grob)
 
 
 
@@ -243,6 +250,24 @@ grob <- arrangeGrob(Coher.plot, Turn.plot, nrow=1)
 #---------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------
 ######################   UNUSED CODE BELOW   ###################### 
+#---------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------
+
+
+#---------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------
+
+# General Methods:
+# - 1. Simulate data for a simple one-year, multi-species occupancy model
+#       - assume that occupancy is structured along a single environmental covariate
+# - 2. Use Bayesian approach to estimate posterior distribution of model parameters
+# - 3. Build a simulation model to simulate many ordinated incidence matrices, drawing upon
+#      the posterior distributions of the estimated parameters from the observed data-set
+# - 4. For each ordinated matrix, store z-values of coherence and turnover to build a 
+#      distribution of z-values for each EMS statistic
+# - 5. From all of the ordinated incidence matrices, generate a heat map of probable 
+#      metacommunity structure. 
+
 #---------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------
 
