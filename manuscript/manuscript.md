@@ -19,21 +19,21 @@ Broadly speaking, the metacommunity concept seeks to understand how spatial patt
 To date, metacommunity research can be separated into two nearly distinct categories: mechanism-based approaches and pattern-based approaches. 
 The mechanism-based approach employs mechanistic modeling or controlled experiments to generate and test hypotheses related to, for example, the distribution of species across local sites [@Holyoak2005; @Cottenie2005; @Urban2009; @Logue2011; @Pillai2011; @Economo2011; @Carrara2012]. 
 The pattern-based approach uses an inverse process, attempting to relate empirically observed patterns of species occurrences across a landscape to structuring mechanisms [@Leibold2002; @Presley2010; @Presley2010a; @Lopez-Gonzalez2012; @Henriques-Silva2013; @Meynard2013]. 
-While both approaches have led to substantial advances in our understanding of community structure and its underpinnings, methodological improvements can be developed to better integrate these often disparate lines of research. 
+While both approaches have advanced understanding of community structure and its underpinnings, methodological improvements can be developed to better integrate these disparate lines of research. 
 Improving metacommunity analytical tools could therefore lead to a more complete understanding of community patterns and sturcturing mechanisms.  
 
 The pattern-based metacommunity approach, often referred to as the 'elements of metacommunity structure' (EMS) paradigm, relies on observed occurrences of species among 'patches' of habitat in the metacommunity (e.g. field sampling sites). 
 This data is typically compiled into a species-by-site incidence matrix and statistical procedures are run to determine if the metacommunity exhibits any of twelve unique structures [@Leibold2002; @Presley2010]. 
-Based on the specific structure observed, inferences can be made as to how the metacommunity assembles along dominant environmental axes. 
+Based on the specific structure observed, inferences are made as to how the metacommunity assembles along dominant environmental axes. 
 However, the efficacy of this pattern-to-process approach depends heavily upon the quality of the observed data. 
 For instance, problems with species detection could lead to innaccurate incidence matrices and, therefore, innaccurate assessments of metacommunity structure. 
 Fortunately, decades of advancements in occupancy modeling have led to powerful methods that deal with problems such as species detectability. 
 Integrating occupancy modeling with the pattern-based EMS paradigm should improve our ability to assess metacommunity structure and the associated inferences about structuring processes.
 
 Occupancy modeling relies on repeated sampling surveys to distinguish between the probability of a species occuring at a site and the probability of a species being detected at a site in which it occurs [@MacKenzie2002]. 
-These models can also use observed occurrences to simultaneously estimate the effects of covariates on detection and occurrence probabilities. 
+These models facilitate estimation of the effects of covariates on detection and occurrence probabilities. 
 Recently, dynamic multi-species occupancy models have been developed for use with longitudinal datasets to better estimate aspects of metacommunity structure, such as alpha, beta and gamma diversity metrics, as well as species-, site- and time-specific covariate effects on occurrence probabilities [@Dorazio2010; @Burton2012]. 
-In their article, Dorazio et al. (2010) also specifically identify a closer union of their modeling framework with metacommunity theory as a priority in the field. 
+For instance, Dorazio et al. (2010) also specifically identify a closer union of their modeling framework with metacommunity theory as a priority in the field. 
 While the integration of occupancy modeling with metacommunity theory is nascent, there is enormous potential to improve the study of metacommunity dynamics.
 
 In this article, we will highlight some of the difficulties with current EMS methods and emphasize how integrating assessment of EMS with occupancy modeling will help to resolve these issues. 
