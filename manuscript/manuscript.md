@@ -1,4 +1,4 @@
-*Improving inference of metacommunity structure using multi-species occupancy models*
+Improving inference of metacommunity structure using multi-species occupancy models
 ========================================================
 
 #### Authors
