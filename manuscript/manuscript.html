@@ -1,8 +1,156 @@
-Improving inference of metacommunity structure using multi-species occupancy models
-========================================================
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=9" >
 
-#### Authors  
-Joseph R. Mihaljevic$^1$$^*$, Maxwell B. Joseph$^1$, Pieter T.J. Johnson$^1$
+<title>Improving inference of metacommunity structure using multi-species occupancy models</title>
+
+<style type="text/css">
+body, td {
+   font-family: sans-serif;
+   background-color: white;
+   font-size: 12px;
+   margin: 8px;
+}
+
+tt, code, pre {
+   font-family: 'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace;
+}
+
+h1 { 
+   font-size:2.2em; 
+}
+
+h2 { 
+   font-size:1.8em; 
+}
+
+h3 { 
+   font-size:1.4em; 
+}
+
+h4 { 
+   font-size:1.0em; 
+}
+
+h5 { 
+   font-size:0.9em; 
+}
+
+h6 { 
+   font-size:0.8em; 
+}
+
+a:visited {
+   color: rgb(50%, 0%, 50%);
+}
+
+pre {	
+   margin-top: 0;
+   max-width: 95%;
+   border: 1px solid #ccc;
+   white-space: pre-wrap;
+}
+
+pre code {
+   display: block; padding: 0.5em;
+}
+
+code.r, code.cpp {
+   background-color: #F8F8F8;
+}
+
+table, td, th {
+  border: none;
+}
+
+blockquote {
+   color:#666666;
+   margin:0;
+   padding-left: 1em;
+   border-left: 0.5em #EEE solid;
+}
+
+hr {
+   height: 0px;
+   border-bottom: none;
+   border-top-width: thin;
+   border-top-style: dotted;
+   border-top-color: #999999;
+}
+
+@media print {
+   * { 
+      background: transparent !important; 
+      color: black !important; 
+      filter:none !important; 
+      -ms-filter: none !important; 
+   }
+
+   body { 
+      font-size:12pt; 
+      max-width:100%; 
+   }
+       
+   a, a:visited { 
+      text-decoration: underline; 
+   }
+
+   hr { 
+      visibility: hidden;
+      page-break-before: always;
+   }
+
+   pre, blockquote { 
+      padding-right: 1em; 
+      page-break-inside: avoid; 
+   }
+
+   tr, img { 
+      page-break-inside: avoid; 
+   }
+
+   img { 
+      max-width: 100% !important; 
+   }
+
+   @page :left { 
+      margin: 15mm 20mm 15mm 10mm; 
+   }
+     
+   @page :right { 
+      margin: 15mm 10mm 15mm 20mm; 
+   }
+
+   p, h2, h3 { 
+      orphans: 3; widows: 3; 
+   }
+
+   h2, h3 { 
+      page-break-after: avoid; 
+   }
+}
+
+</style>
+
+
+
+<!-- MathJax scripts -->
+<script type="text/javascript" src="https://c328740.ssl.cf1.rackcdn.com/mathjax/2.0-latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+
+</head>
+
+<body>
+<h1>Improving inference of metacommunity structure using multi-species occupancy models</h1>
+
+<h4>Authors</h4>
+
+<p>Joseph R. Mihaljevic$<sup>1\[ ^*$, Maxwell B. Joseph$^1$, Pieter T.J. Johnson$^1$
 
 $^1$ *Department of Ecology and Evolutionary Biology, University of Colorado, Boulder, CO, 80309*
 
@@ -40,7 +188,7 @@ If a metacommunity exhibits positive coherence, two more metrics are calculated 
 
 Boundary clumping, estimated with Morista's index, helps to distinguish between clumped structures or helps to determine the way nested subsets are organized. If a metacommunity is positively coherent and clumped, and there is positive boundary clumping, the metacommunity is said to exhibit a Clementsian structure. This means that distinct species groupings emerge along the gradient (e.g. intermediate and climax communities). In this case, the ordinated structure may be the result of multimodal species-specific responses to an environmental gradient. In other words, subsets of species respond similarly as one another to the gradient, but differently from other subsets of species. Alternatively, if there is no discernible boundary clumping, the metacommunity is said to exhibit a Gleasonian structure, where species respond idiosyncratically to the environmental gradient, for example, as a unimodal distribution of responses. Negative boundary clumping is indicative of evenly spaced species assemblages. 
 
-If a metacommunity is positively coherent and exhibits nested subsets, and there is positive boundary clumping, the metacommunity shows clumped species losses along the environmental gradient. For example, a plant assemblage may show subsets along an environmental gradient that crosses distinct biomes, leading to clumped assemblages [@Presley2010]. If there is no evidence for boundary clumping, this is indicative of random species losses along the gradient. Finally, if there is negative boundary clumping, this shows evidence for hyperdispersed (evenly spaced) species losses. In this case, species loss is more or less predictable along the environmental gradient.
+If a metacommunity is positively coherent and exhibits nested subsets, and there is positive boundary clumping, the metacommunity shows clumped species losses along the environmental gradient. For example, a plant assemblage may show subsets along an environmental gradient, but ecotypes emerge leading to clumped assemblages [@Presley2010]. If there is no evidence for boundary clumping, this is indicative of random species losses along the gradient. Finally, if there is negative boundary clumping, this shows evidence for hyperdispersed (evenly spaced) species losses. In this case, species loss is more or less predictable along the environmental gradient.
 
 After the metacommunity structure is discerned using these three metrics, studies typically seek to determine which environmental covariates might be the responsible structuring gradient. This analyses takes various forms. In most cases, the ordination score for each sampled site is extracted from the incidence matrix. Then correlation coefficients are calculated for each covariate of interest and subsequently researchers theorize how significantly correlated covariates might be responsible for structuring the metacommunity (**citations**). Another, related approach is to use, for example, canonical correspondence analysis to relate site ordination scores to multiple covariates simultaneously (**citations**). A more recent approach is to combine one of these previously discussed analyses with a variance partitioning analysis to evaluate the relative contribution of classes of covariates, such as 'local' and 'spatial' or 'abiotic' and 'biotic' (**citations**). 
 
@@ -52,56 +200,37 @@ Multi-species occupancy models
 Species occupancy models were developed to estimate a species' probability of occurring within a site while correcting for the fact that there is inherent error in detection, and therefore the species may be present but go undetected in a survey. To overcome this hurdle, occupancy models using data from multi-observation surveys can disentangle detection and occurrence probabilities to better estimate species presences and absences. More recently, these models have been extended to multi-species and multi-timepoint (longitudinal) surveys. In these models, species-, site- and time-specific estimates of detection probability, occurrence probability and covariate effects can be estimated. Additionally, with longitudinal surveys, the probabilities of persistence at a site and colonization of previously unoccupied sites can be estimated. All of these models estimate parameters in the Bayesian framework. Here, for simplicity, we will describe the structure of a single timepoint, multi-species occupancy model with mulitple observations at each site over the single time period (e.g. multiple surveys within one month). This same model will be used for all of our subsequent simulations and analyses.  
 
 Let $z_{i,k}$ represent the true occurrence of species *i* at site *k*, where $z_{1,1}=1$ means that Species 1 is present at Site 1. This true occurrence is estimated as a Bernouli trial with probability, $\psi_{i,k}$, the probability of occurrence: 
-$$ z_{i,k} \sim Bern(\psi_{i,k}) $$
+ \]</sup> z<em>{i,k} \sim Bern(\psi</em>{i,k}) \[ 
 
 The probability of occurrence, $\psi_{i,k}$, can be related to any number of covariates as follows:
-$$ logit(\psi_{i,k}) = \alpha_{i0} + \alpha_{i1}X_{k1} + \dots + \alpha_{iC}X_{kC} $$,
+ \] logit(\psi<em>{i,k}) = \alpha</em>{i0} + \alpha<em>{i1}X</em>{k1} + \dots + \alpha<em>{iC}X</em>{kC} \[ ,
 where *C* is the number of covariates, $\alpha_{ic}$ is the species-specific effect of covariate *c*, $\alpha_{i0}$ is the species-specific baseline occurrence probability, and $X_{kc}$ is the value of covariate *c* at site *k*. 
 
 Observations of each species at each site are accumulated over a series of observations within the given time-frame. For example, if Species 1 is observed in five total surveys at Site 2, $Y_{1,2}=5$. These observations, however, have inherent error in detectability. Let $\rho_{i,k}$ represent the species- and site-specific probability of detection. Again, the probabilities of detection can be influenced by site-level covariates. These covariates can be the same as or unique from the covariates influencing occurrence proabilities:
-$$ logit(\rho_{i,k}) = \beta_{i0} + \beta_{i1}X_{k1} + \dots + \beta_{iC}X_{kC} $$
+ \] logit(\rho<em>{i,k}) = \beta</em>{i0} + \beta<em>{i1}X</em>{k1} + \dots + \beta<em>{iC}X</em>{kC} \[ 
 
 The observed occurrences are thus binomially distributed, influenced by both the detection and occurrence probabilities and the number of surveys conducted at each site, $J_{k}$:
-$$ Y_{i,k} \sim Binom(J_{k}, z_{i,k}\rho_{i,k}) $$
+ \] Y<em>{i,k} \sim Binom(J</em>{k}, z<em>{i,k}\rho</em>{i,k}) $$</p>
 
-Depending on how many sites were sampled and how many species are observed, estimating all of these species- and site-specific parameters can be computationally expensive. In order to optimize parameter estimation, metacommunity-level hyperparameters are estimated in a heirarchical Bayesian framework. Thus, species- and site-level parameters are drawn from the metacommunity-level distribution of parameter values. In all of the follwoing analyses, we used R (**citation**) and JAGS (**citation**), via the R package 'rjags' (**citation**). 
+<p>Depending on how many sites were sampled and how many species are observed, estimating all of these species- and site-specific parameters can be computationally expensive. In order to optimize parameter estimation, metacommunity-level hyperparameters are estimated in a heirarchical Bayesian framework. Thus, species- and site-level parameters are drawn from the metacommunity-level distribution of parameter values. In all of the follwoing analyses, we used R (<strong>citation</strong>) and JAGS (<strong>citation</strong>), via the R package &#39;rjags&#39; (<strong>citation</strong>). </p>
 
-Difficulties with the EMS paradigm
--------------------------------------
-*Detection errors*  
-A large assumption that the EMS strategy makes is that the collected data do not suffer from problems with detection. However, presence/absence data are inherently flawed by observational error. Detection error can influence the ordination of the community matrix, the calculated EMS metrics, and the accuracy of structural inference based on null matrices. For example, if species detection is imperfect, the calculated number of embedded absences from the ordinated matrix may be overestimated, which could lead to type II errors where metacommunities are incorrectly assigned random structures. Additionally, imperfect detection influences the construction of null matrices. Depending on the method used to generate these null matrices, type I or type II errors are of concern (**citation**), and detection problems can enhance these issues. The occupancy modeling framework can circumvent this problem by estimating true occupancy of each species at each site, $z_{i,k}$. 
+<h2>Difficulties with the EMS paradigm</h2>
 
-With the Bayesian approach to occupancy modeling, Gibbs sampling is used to create a distribution of posterior estimates for each $z_{i,k}$. These $z_{i,k}$ values can be assembled into an incidence matrix for each sampling iteration, $Z_{iter}$. Each $Z_{iter}$ can be ordinated to provide a distribution of incidence matrices that represent estimates of true occupancy states. In this way, one can generate a distribution of metacommunity structure, rather than a single estimate for a given dataset. 
+<p>A large assumption that the EMS strategy makes is that the collected data do not suffer from problems with detection. However, presence/absence data are inherently flawed by observation error. This observation or detection error can influence the ordination of the community matrix, the calculated EMS metrics, and the accuracy of structural inference based on null matrices. For example, if species detection is imperfect, the calculated number of embedded absences from the ordinated matrix may be overestimated, which could lead to type II errors where metacommunities are incorrectly assigned random structures. Additionally, imperfect detection influences the construction of null matrices. Depending on the method used to generate these null matrices, type I or type II errors are of concern (<strong>citation</strong>), and detection problems can enhance these issues. The occupancy modeling framework can circumvent this problem by estimating true occupancy of each species at each site, \( z_{i,k} \). </p>
 
-For example, we simulated occupancy of 12 species at 75 sites, assuming 4 re-sampling visits at each site. We assigned metacommunity-level hyperparameters for species-specific detection and occurrence probabilities. In order to acheive coherence, we assumed that species' occupancy responded to a single continuous covariate, with species-specific effects assigned with hyperparameters. For now we assumed no covariate effects on detection probability. All code and documentation for this and the following simulations can be found at (**github link**). 
+<p>With the Bayesian approach to occupancy modeling, Gibbs sampling is used to create a distribution of posterior estimates for each \( z_{i,k} \). These \( z_{i,k} \) values can be assembled into an incidence matrix for each sampling iteration, \( Z_{iter} \). Each \( Z_{iter} \) can be ordinated to provide a distribution of incidence matrices that represent estimates of true occupancy states. In this way, one can generate a distribution of metacommunity structure, rather than a single estimate for a given dataset. </p>
 
-In Figure 1, we show the ordinated matrix of raw data juxtaposed to a heat map that represents realizations of the ordinated $Z_{iter}$ matrices. For computational tractability, we randomly sampled 100 $Z_{iter}$ from the full posterior sample. The heat map allows us to see the range of likely ordinated matrices, given that some species are likely to go undetected during some surveys. Next, for each of the 100 posterior matrices, we ordinated the matrix and then calculated the three elements of metacommunity structure using 1000 null matrix simulations. In this way, we were able to generate Bayesian posterior estimates for each element of structure (Figure 2). (**Maybe a figure that shows how average detection prob. influences variance of EMS estimates?**). This approach allows us to fully understand the influence of detection on our ability to assign metacommunity structure and therefore understand the extent of type I and type II errors. 
+<p>For example, we simulated occupancy of 10 species at 50 sites using known metacommunity-level hyperparameters for species-specific detection and occurrence probabilities. In order to acheive coherence, we assumed that species&#39; occupancy responded to a single continuous covariate, with species-specific effects assigned with hyperparameters, forming a unimodal distribution of covariate effects. For now we assumed no covariate effects on detection probability. All code and documentation for this and the following simulations can be found at (<strong>github link</strong>). </p>
 
-*Covariate effects*  
-Another issue with the EMS strategy that can be emeliorated by a merger with occupancy modeling is the way in which covariate effects are explored. As discussed above, many researchers extract the ordination scores for sites along the first ordination axis and associate these scores to any number of covariates using univariate correlation tests. This approach is flawed due to the inflation of the overall type I error rate caused by conducting so multiple tests. Additionally, regardless of the type of statistical test, using the ordination scores from a single ordination axis could be leaving out valuable information, and these ordination scores are extracted from a matrix that is most likely flawed by detection error. Occupancy modeling remedies these issues by estimating species-specific covariate effects on occurrence probability based on the raw data (used to estimate true occurrence), not ordination scores. Then, using Bayesian model selection and model averaging, dominant covariates and their effects can be estimated without the need of multiple tests. 
+<p>In Figure 1, we show the ordinated matrix of raw data juxtaposed to a heat map that represents realizations of the ordinated \( Z_{iter} \) matrices. For computational tractability, we randomly sampled 100 \( Z_{iter} \) from the full posterior sample. The heat map allows us to see the range of likely ordinated matrices, given that some species are likely to go undetected during some surveys. Next, for each of the 100 posterior matrices, we ordinated the matrix and then calculated the three elements of metacommunity structure using 1000 null matrix simulations. In this way, we were able to generate Bayesian posterior estimates for each element of structure (Figure 2). (<strong>Maybe a figure that shows how average detection prob. influences variance of EMS estimates?</strong>). This approach allows us to fully understand the influence of detection on our ability to assign metacommunity structure and therefore understand the extent of type I and type II errors. </p>
 
-Additionally, the influence of confounding covariate effects on detection and occurrence probabilities can be explored within the occupancy modeling framework. For example, if a single covariate, such as vegetation density, has positive effects on species' occupancy but negative effects on species' detectability, how might this influence our ability to detect or accurately assign metacommunity structure? (**Leave this as a question or do some analysis?**)
+<p>Another issue with the EMS strategy that can be emeliorated by a merger with occupancy modeling is the way in which covariate effects are explored. As discussed above, many researchers extract the ordination scores for sites along the first ordination axis and associate these scores to any number of covariates using univariate correlation tests. This approach is flawed in that conducting so many tests under the same type II error rate (\( \alpha \)-value) increases the chance of type I errors. </p>
 
-Complementary features of occupancy modeling
-----------------------------------------------
-*Structuring mechanisms*  
-In more ways, multi-species occupancy modeling can complement the features of the EMS paradigm and help to better elucidate metacommunity structuring mechanisms. For example, the structuring mechanisms assigned to metacommunities that exhibit Gleasonian and Clementsian structure differ based on the species-level responses to the dominant environmental covariate. It is often stated that Gleasonian structure arises from idiosyncratic responses to a dominant environmental covariate, whereas Clementsian structure arises from groups of species that respond similarly to an environmental gradient, although differently from other groups of species. In the occupancy modeling framework, where species-specific covariate effects are estimated, one could distinguish between these two mechanisms more formally by observing the distributions of covariate effects among species. If a clear multimodal distribution is estimated, this would be evidence for Clementsian structure indeed arising from groups of species responding similarly.
+<p>\newpage</p>
 
-In order to explore this idea, we...
+<h2>References</h2>
 
-Additionally, when a nested metacommunity structure is present, the extent of boundary clumping is used to infer how species are lost along the environmental gradient. For example, when boundary clumping is signicantly positive, this could mean that discrete environmental variables, such as distinct biomes, may also be influencing species composition. With occupancy modeling, the effects of both continuous and discrete enviromental covariates can be estimated simultaneously to explore their influence on metacommunity structure.
+</body>
 
-We simulated two different nested communities: one influenced by a dominant continuous covariate, and the other influenced by this covariate plus a discrete covariate with three levels (e.g. a metacommunity that spans three biomes)...
+</html>
 
-*Temporal dynamics*    
-
-With more longitudinal metacommunity data becoming available, an interesting question that arises is how does metacommunity structure vary across time points and which are the driving mechanisms for these changes. For example, @Eros2013 explored how metacommunity structure of stream fishes changed over time and how this structure was influenced by environmental covariates. Dynamic occupancy modeling has a few complementary features that could aid in similar studies.
-
-Occupancy modeling could be used to distinguish if changes in metacommunity structure are more related to changing covariate values at sites over time, whether the dominant structuring covariate changes identity over time (e.g. from altitude to pH), or if metacommunity structure changes due to idiosyncratic changes in how particular species respond to the same covariates over time. As a simple example, we simulated...
-
-Additionally, @Dorazio2010 showed how multi-species occupancy modeling can be used to estimate species- and time-specific covariates on detection, occurrence, colonization and persistence probabilities.  
-
-\newpage
-
-References
----------------

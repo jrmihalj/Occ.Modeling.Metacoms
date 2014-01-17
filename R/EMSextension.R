@@ -32,7 +32,7 @@
 
 # Establish basic parameters for the simulation:
 N <- 10 # Number of species
-K <- 100 # Number of sites
+K <- 50 # Number of sites
 J <- 4  # Number of sampling replicates per site
 
 # Establish some useful functions:
@@ -55,10 +55,11 @@ mu_rho <- Logit(p_rho)
 sd_rho <- 1 
 
 
-# Establish species-specific base-line random effects
-# I assume these base-line effects do not change over time.
+# Establish species-specific base-line occurrence
+# I assume these base-line probabilities do not change over time.
 b.spp <- rnorm(N, mu_b, sd_b)
 
+# Establish species-specific detection probabilities
 lrho.spp <- rnorm(N, mu_rho, sd_rho)
 rho.spp <- AntiLogit(lrho.spp)
 
