@@ -90,5 +90,9 @@ grob <- arrangeGrob(Coher.plot, Turn.plot, Bound.plot, nrow=1)
 quartz(height=5, width=9)
 print(grob)
 
+# Determine which iterations had Clementsian structure, rather than Gleasonian:
+head(Bound)
+Bound[which(Bound[, 2]<0.05), ] #23/200 = 11.5%
+
 
 

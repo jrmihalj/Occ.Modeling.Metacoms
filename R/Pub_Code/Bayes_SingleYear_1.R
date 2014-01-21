@@ -95,3 +95,4 @@ out <- coda.samples(mod, n.iter = 3000, variable.names = params, thin=10)
 # Store output:
 library(ggmcmc)
 post.out <- ggs(out)
+str(post.out)

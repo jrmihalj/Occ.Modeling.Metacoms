@@ -24,9 +24,9 @@ AntiLogit <- function(x){
 
 
 # Establish community-level hyperparameters
-p_b <- 0.5 # community-level probability of occurrence
+p_b <- 0.6 # community-level probability of occurrence
 mu_b <- Logit(p_b)
-sd_b <- 0.5 # standard dev. b
+sd_b <- 0.75 # standard dev. b
 
 p_rho <- 0.6 # community-level probability of detection
 mu_rho <- Logit(p_rho)
@@ -35,8 +35,7 @@ sd_rho <- 0.75
 
 # Establish species-specific base-line occurrence
 # I assume these base-line probabilities do not change over time.
-#b.spp <- rnorm(N, mu_b, sd_b)
-b.spp <- rep(0.4, N)
+b.spp <- rnorm(N, mu_b, sd_b)
 
 # Establish species-specific detection probabilities
 lrho.spp <- rnorm(N, mu_rho, sd_rho)
@@ -44,7 +43,6 @@ rho.spp <- AntiLogit(lrho.spp)
 
 # Establish covariate effects per species:
 # I will assume that occupancy is only potentially related to one covariate for each species.
-# betas.b <- rnorm(N, 0, 0.75)
 betas.b <- runif(N, -1.5, 1.5)
 
 # Establish covariate values:
@@ -90,6 +88,8 @@ Y2 <- aperm(Y, c(2, 1)) # Now sites are rows and species are columns
 Y2 <- ifelse(Y2 > 0, 1, 0)
 ordY <- OrderMatrix(Y2)
 colnames(ordY) <- as.factor(1:ncol(ordY))
+
 quartz(height=6, width=3)
 print(Matrix_Plot(ordY, xlab="Species", ylab="Sites"))
 
+Metacommunity(Y2) # Raw data shows Clementsian Structure
