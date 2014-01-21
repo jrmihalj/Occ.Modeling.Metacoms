@@ -6,7 +6,7 @@
 ######## CONSTRUCT Z FROM BAYESIAN OUTPUT ##########
 ####################################################
 
-iter <- 100 # number of samples to draw from the posterior 
+iter <- 200 # number of samples to draw from the posterior 
 
 # Each chain has 300 observations (n.iter=3000, thinned by 10)
 # Choose which iterations will be used from the posterior
