@@ -71,23 +71,29 @@ print(Matrix_HeatMap(z.ord, ylab="Sites"))
 # Generate density plots of posterior metacommunity metrics:
 Coher.plot <- ggplot(data.frame(Coher), aes(x=z))+
   geom_histogram()+
-  labs(x="Coherence z-score", y="histogram")+
-  theme_classic()
+  labs(x="", y="")+
+  theme_classic()+
+  scale_x_continuous(breaks=c(5, 7, 9))+
+  scale_y_continuous(limits=c(0, 20), breaks=c(0, 10, 20))
 
 Turn.plot <- ggplot(data.frame(Turn), aes(x=z))+
   geom_histogram()+
-  labs(x="Turnover z-score", y="")+
-  theme_classic()
+  labs(x="", y="")+
+  theme_classic()+
+  scale_x_continuous(breaks=c(-20, -15, -10, -5))+
+  scale_y_continuous(limits=c(0, 20), breaks=c(0, 10, 20))
 
 Bound.plot <- ggplot(data.frame(Bound), aes(x=index))+
   geom_histogram()+
-  labs(x="Morista's I", y="")+
-  theme_classic()
-
+  labs(x="", y="")+
+  theme_classic()+
+  scale_x_continuous(breaks=c(1, 1.2, 1.4))+
+  scale_y_continuous(breaks=c(0, 15, 30))
 
 library(gridExtra)
-grob <- arrangeGrob(Coher.plot, Turn.plot, Bound.plot, nrow=1)
-quartz(height=5, width=9)
+grob <- arrangeGrob(Coher.plot, Turn.plot, Bound.plot, 
+                    nrow=1)
+quartz(height=4, width=9)
 print(grob)
 
 # Determine which iterations had Clementsian structure, rather than Gleasonian:
