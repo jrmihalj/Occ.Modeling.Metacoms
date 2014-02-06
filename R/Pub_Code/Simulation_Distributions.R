@@ -1,19 +1,10 @@
-
-# Things to do:
-# (1) Automate sequence of simulations:
-# - alter distribution of covariate effects
-# - nest alteration of covariate value distribution
-# (2) Automate determination of metacommunity structure
-# (3) Store results in a data.frame for easy access
-
 # Permuations of covariate effects:
-# fixed (0)
 # Normal (0, 0.5)
 # Normal (0, 1)
 # Uniform (-1, 1)
 # Uniform (-3, 3)
 
-# Permutations of covariate values:
+# Permutations of covariate values (for each covariate effect):
 # Normal (0, 1)
 # Normal (0, 5)
 # Normal (2, 1)
@@ -57,7 +48,7 @@ AntiLogit <- function(x){
 }
 
 # Base-line occurrence probability
-b0 <- rep(Logit(0.6), N) # Fixed occurrence across species
+b0 <- rep(Logit(0.6), N) # Fixed occurrence across species, in logit space
 
 # Establish species-specific detection probabilities
 p0 <- rep(0.7, N) # Fixed detection prob.
@@ -68,29 +59,30 @@ p0 <- rep(0.7, N) # Fixed detection prob.
 #############################################
 
 # Set number of iterations for each set of parameter values
-iter <- 2
+iter <- 100
 total.iter <- iter*nrow(mat.eff)*nrow(mat.val) # Total number of simulations
 
-b.spp <- NULL
-X <- NULL
+# Storage
+b.spp <- vector() # species-specific covariate effects
+X <- vector() # site-specific covariate values
   
-z <- array(0, dim = c(N, K)) # This will hold occupancy states
+z <- array(0, dim = c(N, K)) # 'True' occupancy states
 Y <- array(0, dim = c(N, K, nrow(mat.eff), nrow(mat.val), iter)) # This will hold simulated observations
 lpsi <- array(0, dim = c(N, K)) # This will hold the occupancy probabilities
 psi <- array(0, dim = c(N, K))
 
 
-
-for (it in 1:iter){
-  for(i in 1:nrow(mat.eff)){
-    # Draw species-specific covariate effects
-    if(i < 3){ # Alter this number depending on the parameters in mat.eff
-      b.spp <- rnorm(N, mat.eff[i, 1], mat.eff[i, 2])
-    }else{
-      b.spp <- runif(N, mat.eff[i, 1], mat.eff[i, 2])
-    }
-    
-    for(j in 1:nrow(mat.val)){
+for (i in 1:nrow(mat.eff)){
+  for(j in 1:nrow(mat.val)){
+    for(it in 1:iter){
+      
+      # Draw species-specific covariate effects
+      if(i < 3){ # Alter this number depending on the parameters in mat.eff
+        b.spp <- rnorm(N, mat.eff[i, 1], mat.eff[i, 2])
+      }else{
+        b.spp <- runif(N, mat.eff[i, 1], mat.eff[i, 2])
+      }
+      
       # Draw site-specific covariate values
       if(j < 5){ # Alter this number depending on the parameters in mat.val
         X <- rnorm(K, mat.val[j, 1], mat.val[j, 2])
@@ -112,28 +104,144 @@ for (it in 1:iter){
   }
 }
 
-####
-# Now I need to figure out how to do the steps below (get rid of zero columns/rows), and then store in a list
-# But how to get from array to list? 
+#############################################
+####  STORE SEPARATE MATRICES IN A LIST  ####
+#############################################
 
-
-#Check row and column sums:
-zeros <- NULL
-for(i in 1:nrow(Y)){
-  if(sum(Y[i, ])==0) zeros <- c(zeros, i)
+All_mats <- list()
+All_mats_names <- paste("Mat_", 1:total.iter, sep="")
+count <- 1
+for (it in 1:iter){
+  for(i in 1:nrow(mat.eff)){
+    for(j in 1:nrow(mat.val)){
+      All_mats[[count]] <- Y[, , i, j, it]
+      names(All_mats)[count] <- All_mats_names[i]
+      count <- count + 1
+    }
+  }
 }
-zeros
-if(sum(zeros)>0) Y <- Y[-zeros, ]
 
-zeros <- NULL
-for(j in 1:ncol(Y)){
-  if(sum(Y[, j])==0) zeros <- c(zeros, j)
+#############################################
+### CHECK EACH MATRIX FOR ROW/COLUMN SUMS ###
+#############################################
+
+# First, check row and column sums.
+# Second, transpose so that rows are sites and columns are species
+# This is necessary for the 'metacom' package, which uses 'vegan' functions. 
+# 'vegan' requires a site-by-species matrix. 
+
+for(i in 1:total.iter){
+  # Check column sums
+  if(any(colSums(All_mats[[i]]) == 0) == TRUE){
+    print(paste(which(colSums(All_mats[[i]]) == 0),"This site of Mat", i, "sums to zero", sep=" "))
+    All_mats[[i]] <- All_mats[[i]][, -which(colSums(All_mats[[i]]) == 0)]
+  }
+  # Check row sums
+  if(any(rowSums(All_mats[[i]]) == 0) == TRUE){
+    print(paste(which(rowSums(All_mats[[i]]) == 0), ":","This species of Mat", i, "sums to zero", sep=" "))
+    All_mats[[i]] <- All_mats[[i]][-which(rowSums(All_mats[[i]]) == 0), ]
+  }
+  # Transpose
+  All_mats[[i]] <- aperm(All_mats[[i]], c(2, 1))
+  # Convert to pres/abs
+  All_mats[[i]] <- ifelse(All_mats[[i]] > 0, 1, 0)
 }
-zeros
-if(sum(zeros)>0) Y <- Y[, -zeros]
 
-# Calculate metacommunity metrics
+#############################################
+# CALCULATE AND STORE METACOMMUNITY METRICS #
+##########    FOR EACH MATRIX    ############
+#############################################
+
 library(metacom)
-Y2 <- aperm(Y, c(2, 1)) # Now sites are rows and species are columns
-Y2 <- ifelse(Y2 > 0, 1, 0)
-Metacommunity(Y2)
+
+#Storage of metacommunity metrics
+Coher <- array(0, dim=c(total.iter, 5))
+colnames(Coher) <- c("Emb", "z", "pval", "sim.mean", "sim.sd")
+Turn <- array(0, dim=c(total.iter, 5))
+colnames(Turn) <- c("Repl", "z", "pval", "sim.mean", "sim.sd")
+Bound <- array(0, dim=c(total.iter, 3))
+colnames(Bound) <- c("index", "pval", "df")
+
+for(i in 1:total.iter){
+  meta <- NULL
+  meta <- Metacommunity(All_mats[[i]], method="r1", sims=1000)
+  Coher[i, ] <- as.numeric(as.character(meta[[2]][1:5, ]))
+  Turn[i, ] <- as.numeric(as.character(meta[[3]][1:5, ]))
+  for(j in 1:3){
+    Bound[i, j] <- meta[[4]][1,j]
+  }
+}
+
+##############################################
+###   DETERMINE METACOMMUNITY STRUCTURE   ####
+###########    FOR EACH MATRIX    ############
+##############################################
+
+# Store output:
+Structure <- vector()
+
+for(i in 1:total.iter){
+  if(Coher[i, 3] > 0.05){
+    Structure[i] <- "Random"
+  }
+  
+  if(Coher[i, 3] <= 0.05 & Coher[i, 1] > Coher[i, 4]){
+    Structure[i] <- "Checkerboard"
+  }
+  
+  if(Coher[i, 3] <= 0.05 & Coher[i, 1] < Coher[i, 4] & 
+       Turn[i, 3] > 0.05 & Turn[i, 1] < Turn[i, 4]){
+    Structure[i] <- "Quasi-Nested"
+  }
+  
+  if(Coher[i, 3] <= 0.05 & Coher[i, 1] < Coher[i, 4] & 
+       Turn[i, 3] > 0.05 & Turn[i, 1] > Turn[i, 4] &
+       Bound[i, 1] > 1 & Bound[i, 2] <= 0.05){
+    Structure[i] <- "Quasi-Clementsian"
+  }
+  
+  if(Coher[i, 3] <= 0.05 & Coher[i, 1] < Coher[i, 4] & 
+       Turn[i, 3] > 0.05 & Turn[i, 1] > Turn[i, 4] &
+       Bound[i, 1] < 1 & Bound[i, 2] <= 0.05){
+    Structure[i] <- "Quasi-EvenSpaced"
+  }
+  
+  if(Coher[i, 3] <= 0.05 & Coher[i, 1] < Coher[i, 4] & 
+       Turn[i, 3] > 0.05 & Turn[i, 1] > Turn[i, 4] &
+       Bound[i, 2] > 0.05){
+    Structure[i] <- "Quasi-Gleasonian"
+  }
+  
+  if(Coher[i, 3] <= 0.05 & Coher[i, 1] < Coher[i, 4] & 
+       Turn[i, 3] <= 0.05 & Turn[i, 1] < Turn[i, 4]){
+    Structure[i] <- "Nested"
+  }
+  
+  if(Coher[i, 3] <= 0.05 & Coher[i, 1] < Coher[i, 4] & 
+       Turn[i, 3] <= 0.05 & Turn[i, 1] > Turn[i, 4] &
+       Bound[i, 1] > 1 & Bound[i, 2] <= 0.05){
+    Structure[i] <- "Clementsian"
+  }
+  
+  if(Coher[i, 3] <= 0.05 & Coher[i, 1] < Coher[i, 4] & 
+       Turn[i, 3] <= 0.05 & Turn[i, 1] > Turn[i, 4] &
+       Bound[i, 1] < 1 & Bound[i, 2] <= 0.05){
+    Structure[i] <- "EvenSpaced"
+  }
+  
+  if(Coher[i, 3] <= 0.05 & Coher[i, 1] < Coher[i, 4] & 
+       Turn[i, 3] <= 0.05 & Turn[i, 1] > Turn[i, 4] &
+       Bound[i, 2] > 0.05){
+    Structure[i] <- "Gleasonian"
+  }
+}
+
+
+#########################################
+###   STORE ALL INPUTS AND RESULTS   ####
+#########################################
+
+Cov.Eff.Dist <- rep(paste("Dist", 1:nrow(mat.eff), sep=""), each=nrow(mat.val)*iter)
+Cov.Val.Dist <- rep(rep(paste("Dist", 1:nrow(mat.val), sep=""), each=iter), times=nrow(mat.eff))
+
+Output <- data.frame(Cov.Eff.Dist, Cov.Val.Dist, Structure)
