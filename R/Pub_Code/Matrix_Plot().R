@@ -11,9 +11,9 @@ Matrix_Plot <- function(matrix, xlab="Parasite Species", ylab="Host Individuals"
   ord_mat <- matrix
   #Need to number sites so the graph doesn't rearrange matrix
   rownames(ord_mat) <- as.factor(c(1:nrow(ord_mat)))
-  Names <- NULL
-  Names <- colnames(ord_mat)
-  colnames(ord_mat) <- as.factor(1:length(Names))
+#   Names <- NULL
+#   Names <- colnames(ord_mat)
+#   colnames(ord_mat) <- as.factor(1:length(Names))
   
   # melt() changes the data into a data.frame that ggplot2 can read for the heat map
   dataframe <- melt(ord_mat)
