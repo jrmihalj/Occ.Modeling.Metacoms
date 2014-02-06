@@ -55,7 +55,7 @@ colnames(Bound) <- c("index", "pval", "df")
 
 for(i in 1:iter){
   meta <- NULL
-  meta <- Metacommunity(z.post[, , i], method="r1", sims=1000, allow.empty=T)
+  meta <- Metacommunity(z.post[, , i], method="r1", sims=1000)
   z.ord[, , i] <- meta[[1]]
   Coher[i, ] <- as.numeric(as.character(meta[[2]][1:5, ]))
   Turn[i, ] <- as.numeric(as.character(meta[[3]][1:5, ]))
