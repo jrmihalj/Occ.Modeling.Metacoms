@@ -2,97 +2,224 @@
 # Author: JR Mihaljevic
 # January 2014
 
-# Covariate effects for occurrence, but not for detection
-# Model stored in document: OccMod_SingleYear.txt
 
-# model {
-#   #-------------------------------------------------------------------------------
-#   #######################################
-#   ############ ASSIGN PRIORS ############
-#   #######################################
-#   #-------------------------------------------------------------------------------
-#   ## Metacommunity-wide average of parameters: psi, p:
-#   
-#   psiMean ~ dbeta(1,1) # Occurrence probability
-#   pMean ~ dbeta(1,1) # Detection probability
-#   
-#   #-------------------------------------------------------------------------------
-#   ## Manual logit transformation of mean parameter values:
-#   
-#   lpsiMean <- log(psiMean) - log(1-psiMean)
-#   lpMean <- log(pMean) - log(1-pMean) 
-#   
-#   #-------------------------------------------------------------------------------
-#   ## Precision estimates for each metacommunity average:
-#   
-#   lpsiSD ~ dunif(0,10)
-#   lpsiPrec <- pow(lpsiSD,-2)
-#   
-#   lpSD ~ dunif(0,10)
-#   lpPrec <- pow(lpSD,-2)
-#   
-#   #-------------------------------------------------------------------------------
-#   ## Estimates for covariate effect means and precisions:
-#   
-#   bMean ~ dnorm(0,.001) # b = covariates for occurrence probability
-#   bSD ~ dunif(0,10)
-#   bPrec <- pow(bSD,-2)
-#   
-#   #-------------------------------------------------------------------------------
-#   #######################################
-#   ########## Likelihood Model ###########
-#   #######################################
-#   #-------------------------------------------------------------------------------
-#   for(i in 1:N){
-#     ## Species-specific baseline of occurrence prob.
-#     b0[i] ~ dnorm(lpsiMean, lpsiPrec)T(-12,12) 
-#     
-#     ## Species-specific covariate effects on occurrence:
-#     b[i] ~ dnorm(bMean, bPrec)
-#     
-#     ## Species-specific detection probability
-#     lp[i] ~ dnorm(lpMean, lpPrec)T(-12,12)
-#     p[i] <- 1/(1+exp(-lp[i])) # Manual anti-logit
-#     
-#     for(k in 1:K){
-#       lpsi[i, k] <- b0[i] + b[i] * X[k]
-#       psi[i, k] <- 1/(1+exp(-lpsi[i, k]))
-#       
-#       z[i, k] ~ dbern(psi[i, k])
-#       Y[i, k] ~ dbinom(p[i] * z[i, k], J)
-#     }  
-#   }
-#   # Close Model  
-# }
+############################################
+######## BAYESIAN ESTIMATES FOR Z ##########
+############################################
 
-
-####################################################
-########## BAYESIAN OCCUPANCY MODELING #############
-####################################################
-
-jags_d <- list(X=X,
-               Y=Y,
-               K=ncol(Y),
-               N=nrow(Y),
-               J=J)
-
-# Set initial parameters:
-# Z values (unobserved)
-zinit <- Y
-zinit <- ifelse(zinit > 0, 1, 0)
-
-# Start the model
 library(rjags)
+library(ggmcmc)
+setwd("~/Documents/Thesis Research/Occ.Model.EMS/R")
 
-params <- c("z") # This will give me species-level estimates for each of these
+# Storage for output
+post.z <- list()
 
-mod <- jags.model(file = "OccMod_SingleYear.txt", 
-                  data = jags_d, n.chains = 3, n.adapt=1000,
-                  inits = list(z=zinit))
+for(i in 1:iter){
+  
+  jags_d <- list(X=X[, i],
+                 Y=Yobs_mats[[i]],
+                 K=ncol(Yobs_mats[[i]]),
+                 N=nrow(Yobs_mats[[i]]),
+                 J=J)
+  
+  # Set initial parameters:
+  # Z values (unobserved)
+  
+  zinit <- ifelse(Yobs_mats[[1]] > 0, 1, 0)
+  
+  # Start the model
+  
+  params <- c("lpsiMean", "lpsiSD", "z")
+  
+  mod <- jags.model(file = "OccMod_SingleYear.txt", 
+                    data = jags_d, n.chains = 3, n.adapt=1000,
+                    inits = list(z=zinit))
+  update(mod, n.iter=5000) # 5000 burn-in
+  
+  out <- coda.samples(mod, n.iter = 10000, variable.names = params, thin=10)
+  
+  # Check for convergence for these two parameters:
+  post.psimean <- ggs(out, family="lpsiMean")
+  post.psisd <- ggs(out, family="lpsiSD")
+  Rhat_mean <- get_Rhat(post.psimean)
+  Rhat_sd <- get_Rhat(post.psisd)
+  
+  # If not converged, update model until convergence is achieved
+  if(Rhat_mean > 1.1 | Rhat_sd > 1.1){
+    repeat{
+      update(mod, n.iter=5000) # An extra 5,000 burn-in
+    
+      out <- coda.samples(mod, n.iter = 10000, variable.names = params, thin=10)
+    
+      post.psimean <- ggs(out, family="lpsiMean")
+      post.psisd <- ggs(out, family="lpsiSD")
+      Rhat_mean <- get_Rhat(post.psimean)
+      Rhat_sd <- get_Rhat(post.psisd)
+      
+      if(Rhat_mean < 1.1 & Rhat_sd < 1.1) {break}
+    }
+  }
+  
+  #Store output of z_ij values. 
+  post.z[[i]] <- ggs(out, family="z")
+  
+}
 
-out <- coda.samples(mod, n.iter = 3000, variable.names = params, thin=10)
+
+####################################################
+######## CONSTRUCT Z FROM BAYESIAN OUTPUT ##########
+####################################################
+
+# Create a list with 'iter' elements.
+# Each element is another list with the 1000 Z posterior estimates for each iter
+# I randomly choose which chain to use for each posterior estimate
+
+all_Zposts <- list()
+for(i in 1:iter){
+  #Storage:
+  Zpost_mats <- list()
+  
+  for(j in 1:1000){
+    # Randomly choose from which chain the sample will originate
+    chain <- NULL
+    chain <- sample(c(1:3), 1)
+    
+    # Create a subset vector of the values for all z[n, k]:
+    subset <- NULL
+    subset <- subset(post.z[[i]], Chain==chain & Iteration==paste(j))$value
+    # Store this vector as a matrix
+    z.mat <- NULL
+    z.mat <- matrix(subset, nrow=nrow(Yobs_mats[[i]]), ncol=ncol(Yobs_mats[[i]]), byrow=F)
+
+    # Add matrix to the array
+    Zpost_mats[[j]] <- z.mat
+    
+    # Check for zero sum columns/rows
+    if(any(colSums(Zpost_mats[[j]]) == 0) == TRUE){
+      Zpost_mats[[j]] <- Zpost_mats[[j]][, -which(colSums(Zpost_mats[[j]]) == 0)]
+    }
+    if(any(rowSums(Zpost_mats[[j]]) == 0) == TRUE){
+      Zpost_mats[[j]] <- Zpost_mats[[j]][-which(rowSums(Zpost_mats[[j]]) == 0), ]
+    }
+    
+  }
+  # Store the Zpost_mats list within the overall list
+  all_Zposts[[i]] <- Zpost_mats
+}
+
+#############################################
+# CALCULATE AND STORE METACOMMUNITY METRICS #
+##########    FOR EACH Z_POST    ############
+#############################################
+
+#Storage of metacommunity metrics
+Coher.Zpost <- array(0, dim=c(iter, 5, 1000))
+colnames(Coher.Zpost) <- c("Emb", "z", "pval", "sim.mean", "sim.sd")
+Turn.Zpost <- array(0, dim=c(iter, 5, 1000))
+colnames(Turn.Zpost) <- c("Repl", "z", "pval", "sim.mean", "sim.sd")
+Bound.Zpost <- array(0, dim=c(iter, 3, 1000))
+colnames(Bound.Zpost) <- c("index", "pval", "df")
+
+for(i in 1:iter){
+  for(j in 1:1000){
+    mat <- NULL
+    mat <- all_Zposts[[i]][[j]] # Extract relevant matrix
+    mat <- aperm(mat, c(2,1)) # Transpose
+    
+    # Store all metacommunity metrics
+    meta <- NULL
+    
+    meta <- Metacommunity(mat, method="r1", sims=1000)
+    
+    # Store Coherence Metrics
+    Coher.Zpost[i, ,j] <- as.numeric(as.character(meta_Z[[2]][1:5, ]))
+
+    # Store Turnover Metrics
+    Turn.Zpost[i, ,j] <- as.numeric(as.character(meta_Z[[3]][1:5, ]))
+    
+    # Store Boundary Clumping Metrics
+    for(k in 1:3){
+      Bound.Zpost[i, k, j] <- meta_Z[[4]][1,k]
+    }
+
+  }  
+}
+
+##############################################
+###   DETERMINE METACOMMUNITY STRUCTURE   ####
+###########    FOR EACH Z_POST    ############
+##############################################
 
 # Store output:
-library(ggmcmc)
-post.out <- ggs(out)
-str(post.out)
+Structure.Zpost <- array(0, dim=c(iter, 1000))
+
+for(i in 1:iter){
+  for(j in 1:1000){
+    if(Coher.Zpost[i, 3, j] > 0.05){
+      Structure.Zpost[i, j] <- "Random"
+    }
+    
+    if(Coher.Zpost[i, 3, j] <= 0.05 & Coher.Zpost[i, 1, j] > Coher.Zpost[i, 4, j]){
+      Structure.Zpost[i, j] <- "Checkerboard"
+    }
+    
+    if(Coher.Zpost[i, 3, j] <= 0.05 & Coher.Zpost[i, 1, j] < Coher.Zpost[i, 4, j] & 
+         Turn.Zpost[i, 3, j] > 0.05 & Turn.Zpost[i, 1, j] < Turn.Zpost[i, 4, j]){
+      Structure.Zpost[i, j] <- "Quasi-Nested"
+    }
+    
+    if(Coher.Zpost[i, 3, j] <= 0.05 & Coher.Zpost[i, 1, j] < Coher.Zpost[i, 4, j] & 
+         Turn.Zpost[i, 3, j] > 0.05 & Turn.Zpost[i, 1, j] > Turn.Zpost[i, 4, j] &
+         Bound.Zpost[i, 1, j] > 1 & Bound.Zpost[i, 2, j] <= 0.05){
+      Structure.Zpost[i, j] <- "Quasi-Clementsian"
+    }
+    
+    if(Coher.Zpost[i, 3, j] <= 0.05 & Coher.Zpost[i, 1, j] < Coher.Zpost[i, 4, j] & 
+         Turn.Zpost[i, 3, j] > 0.05 & Turn.Zpost[i, 1, j] > Turn.Zpost[i, 4, j] &
+         Bound.Zpost[i, 1, j] < 1 & Bound.Zpost[i, 2, j] <= 0.05){
+      Structure.Zpost[i, j] <- "Quasi-EvenSpaced"
+    }
+    
+    if(Coher.Zpost[i, 3, j] <= 0.05 & Coher.Zpost[i, 1, j] < Coher.Zpost[i, 4, j] & 
+         Turn.Zpost[i, 3, j] > 0.05 & Turn.Zpost[i, 1, j] > Turn.Zpost[i, 4, j] &
+         Bound.Zpost[i, 2, j] > 0.05){
+      Structure.Zpost[i, j] <- "Quasi-Gleasonian"
+    }
+    
+    if(Coher.Zpost[i, 3, j] <= 0.05 & Coher.Zpost[i, 1, j] < Coher.Zpost[i, 4, j] & 
+         Turn.Zpost[i, 3, j] <= 0.05 & Turn.Zpost[i, 1, j] < Turn.Zpost[i, 4, j]){
+      Structure.Zpost[i, j] <- "Nested"
+    }
+    
+    if(Coher.Zpost[i, 3, j] <= 0.05 & Coher.Zpost[i, 1, j] < Coher.Zpost[i, 4, j] & 
+         Turn.Zpost[i, 3, j] <= 0.05 & Turn.Zpost[i, 1, j] > Turn.Zpost[i, 4, j] &
+         Bound.Zpost[i, 1, j] > 1 & Bound.Zpost[i, 2, j] <= 0.05){
+      Structure.Zpost[i, j] <- "Clementsian"
+    }
+    
+    if(Coher.Zpost[i, 3, j] <= 0.05 & Coher.Zpost[i, 1, j] < Coher.Zpost[i, 4, j] & 
+         Turn.Zpost[i, 3, j] <= 0.05 & Turn.Zpost[i, 1, j] > Turn.Zpost[i, 4, j] &
+         Bound.Zpost[i, 1, j] < 1 & Bound.Zpost[i, 2, j] <= 0.05){
+      Structure.Zpost[i, j] <- "EvenSpaced"
+    }
+    
+    if(Coher.Zpost[i, 3, j] <= 0.05 & Coher.Zpost[i, 1, j] < Coher.Zpost[i, 4, j] & 
+         Turn.Zpost[i, 3, j] <= 0.05 & Turn.Zpost[i, 1, j] > Turn.Zpost[i, 4, j] &
+         Bound.Zpost[i, 2, j] > 0.05){
+      Structure.Zpost[i, j] <- "Gleasonian"
+    }
+  }
+}
+
+##########################################
+###   DETERMINE NUMBER OF DEVIATIONS   ###
+########    FOR EACH POSTERIOR    ########
+##########################################
+
+# Storage:
+percent.dev <- vector()
+for(i in 1:iter){
+  percent.dev[i] <- length(which(Structure.Zpost[i, ] != Structure[i, 1])) / 1000
+}
+
+summary(percent.dev)
