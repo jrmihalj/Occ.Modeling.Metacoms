@@ -1,7 +1,7 @@
 #!/bin/bash
 #PBS -N mpi_test
-#PBS -l walltime=04:00:00
-#PBS -l nodes=4:ppn=12
+#PBS -l walltime=02:00:00
+#PBS -l nodes=8:ppn=12
 #PBS -j oe
 
 #We just asked for 1 node with 4 processors and 1 minute of wall time.
