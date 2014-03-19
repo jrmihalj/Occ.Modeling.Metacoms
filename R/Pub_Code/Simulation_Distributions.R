@@ -66,8 +66,8 @@ total.iter <- iter*nrow(mat.eff)*nrow(mat.val) # Total number of simulations
 b.spp <- vector() # species-specific covariate effects
 X <- vector() # site-specific covariate values
   
-z <- array(0, dim = c(N, K)) # 'True' occupancy states
-Y <- array(0, dim = c(N, K, nrow(mat.eff), nrow(mat.val), iter)) # This will hold simulated observations
+z <- array(0, dim = c(N, K, nrow(mat.eff), nrow(mat.val), iter)) # 'True' occupancy states
+Y <- array(0, dim = c(N, K)) # This will hold simulated observations
 lpsi <- array(0, dim = c(N, K)) # This will hold the occupancy probabilities
 psi <- array(0, dim = c(N, K))
 
@@ -96,8 +96,8 @@ for (i in 1:nrow(mat.eff)){
           lpsi[n, k] <- b0[n] + b.spp[n] * X[k]
           psi[n, k] <- AntiLogit(lpsi[n, k])
           
-          z[n, k] <- rbinom(1, 1, psi[n, k])
-          Y[n, k, i, j, it] <- rbinom(1, J, p0[n] * z[n, k])
+          z[n, k, i, j, it] <- rbinom(1, 1, psi[n, k])
+          Y[n, k] <- rbinom(1, J, p0[n] * z[n, k, i, j, it])
         }
       }
     }
@@ -109,13 +109,11 @@ for (i in 1:nrow(mat.eff)){
 #############################################
 
 All_mats <- list()
-All_mats_names <- paste("Mat_", 1:total.iter, sep="")
 count <- 1
 for (it in 1:iter){
   for(i in 1:nrow(mat.eff)){
     for(j in 1:nrow(mat.val)){
-      All_mats[[count]] <- Y[, , i, j, it]
-      names(All_mats)[count] <- All_mats_names[i]
+      All_mats[[count]] <- z[, , i, j, it]
       count <- count + 1
     }
   }
@@ -241,7 +239,65 @@ for(i in 1:total.iter){
 ###   STORE ALL INPUTS AND RESULTS   ####
 #########################################
 
-Cov.Eff.Dist <- rep(paste("Dist", 1:nrow(mat.eff), sep=""), each=nrow(mat.val)*iter)
-Cov.Val.Dist <- rep(rep(paste("Dist", 1:nrow(mat.val), sep=""), each=iter), times=nrow(mat.eff))
+Cov.Eff.Dist <- rep(rep(paste("Dist", 1:nrow(mat.eff), sep=""), each=nrow(mat.val)), times=iter)
+Cov.Val.Dist <- rep(paste("Dist", 1:nrow(mat.val), sep=""), times=nrow(mat.eff)*iter)
 
 Output <- data.frame(Cov.Eff.Dist, Cov.Val.Dist, Structure)
+
+
+###############################################################################################
+#---------------------------------------------------------------------------------------------#
+###############################################################################################
+
+# Sent this code to run in parallel on a different computer
+
+########################################
+#####     LOOK AT THE RESULTS     ######
+########################################
+
+# Import data from simulations (500 per distribution pair)
+# Conducted on Max's computer
+
+output <- read.csv(file.choose(), header=T) #sim_dist_results.csv
+output <- output[, -1] # First column is just an identifier (unnecessary)
+head(output)
+
+# Make a table to summarize results:
+# I want the count of each structure observed for each combination of 
+# Cov.Eff.Dist and Cov.Val.Dist
+library(reshape2)
+casted <- dcast(output, Cov.Eff.Dist + Cov.Val.Dist ~ Structure)
+out_melt <- melt(casted, id.vars=c("Cov.Eff.Dist", "Cov.Val.Dist"))
+colnames(out_melt) <- c("Ef.dist", "Val.dist", "Structure", "Count")
+
+#Change Ef.dist labels so I can order them on the graph:
+levels(out_melt$Ef.dist)[levels(out_melt$Ef.dist)=="Dist1"] <- "N(0,0.5)"
+levels(out_melt$Ef.dist)[levels(out_melt$Ef.dist)=="Dist2"] <- "N(0,1)"
+levels(out_melt$Ef.dist)[levels(out_melt$Ef.dist)=="Dist3"] <- "U(-1,1)"
+levels(out_melt$Ef.dist)[levels(out_melt$Ef.dist)=="Dist4"] <- "U(-3,3)"
+
+
+# Graph the frequencies of each structure:
+# First, set up a color-blind-friendly color palette:
+cbPalette <- c("#999999", "#E69F00", "#CC79A7", "#009E73", "#F0E442", 
+               "#0072B2", "#D55E00", "#56B4E9", "#000000")
+
+library(ggplot2)
+quartz(height=10, width=10)
+frac <- ggplot(out_melt, aes(x=Val.dist, y=Count, fill=Structure))+
+  geom_bar(stat="identity")+
+  theme_classic()+
+  facet_grid(Ef.dist~.)+
+  #scale_y_continuous(breaks=c(0, 500), labels=c("0", "1"))+
+  labs(x=NULL, y=NULL)+
+  scale_fill_manual(values=cbPalette, breaks=c("Random", "Clementsian", "Quasi-Clementsian",
+                                               "Gleasonian", "Quasi-Gleasonian", "Nested", 
+                                               "Quasi-Nested", "Checkerboard", "EvenSpaced"))+
+  scale_x_discrete(limits=c("Dist1","Dist5","Dist2","Dist6","Dist3","Dist7","Dist4","Dist8"),
+                   labels=c("N(0,1)","U(-1,1)","N(0,5)","U(-4,4)","N(2,1)","U(0,3)","N(5,2)","U(0,10)"))+
+  theme(strip.background=element_rect(color="black", fill="white"))
+  
+print(frac) 
+
+
+
