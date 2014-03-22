@@ -84,12 +84,6 @@ b0 <- rep(Logit(0.6), N) # Change if desired
 # The simulation will cycle through each of these:
 p0s <- c(1.00, 0.75, 0.50)
 
-# Means and sd of species-specific covariate effects and covariate values
-# This will generate different types of structures with each iteration.
-b_sd <- c(0.5, 1) # b_mean held at zero
-X_mean <- c(0, 2)
-X_sd <- c(5, 2)
-
 # Storage (Outputs):
 Structure.ZY <- array("A", dim=c(iter, 2)) # 2 Columns: Z and Y
 Structure.Zpost <- array("A", dim=c(iter, 1000)) # 1000 Z posteriors
@@ -108,9 +102,9 @@ for(p in 1:length(p0s)){
   for(i in 1:iter){
     #### Draw covariate effects and values ####
     b.spp <- NULL
-    b.spp <- rnorm(N, 0, sample(b_sd, size=1)) # mean held at 0
+    b.spp <- rnorm(N, 0, runif(1, 0.5, 1)) # mean held at 0
     X <- NULL
-    X <- rnorm(K, sample(X_mean, size=1), sample(X_sd, size=1))
+    X <- rnorm(K, runif(1, 0, 2), runif(1, 2, 5))
     
     #### Occupancy states ####
     # Storage:
