@@ -225,7 +225,7 @@ for(i in 1:iter){
   setTxtProgressBar(pb, i)
 }
 # Determine Structure for each:
-Structure <- vector()
+Structure <- NULL
 
 for(i in 1:iter){
   if(Coher[i, 3] > 0.05){
