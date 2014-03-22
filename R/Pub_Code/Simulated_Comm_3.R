@@ -82,7 +82,8 @@ b0 <- rep(Logit(0.6), N) # Change if desired
 
 # Fixed detection probability across species.
 # The simulation will cycle through each of these:
-p0s <- c(1.00, 0.75, 0.50)
+p0_means <- c(0.90, 0.75, 0.50)
+sd_p <- 0.75 #St. Dev. fixed for all simulations
 
 # Storage (Outputs):
 Structure.ZY <- array("A", dim=c(iter, 2)) # 2 Columns: Z and Y
@@ -95,16 +96,21 @@ Structure.Zpost <- array("A", dim=c(iter, 1000)) # 1000 Z posteriors
 for(p in 1:length(p0s)){
   
   #### RUN THE ENTIRE CODE FOR EACH OF THE SPECIFIED DETECTION PROBABILITIES ####
-  p0 <- rep(p0s[p], N)
-  
+  mu_p <- NULL
+  mu_p <- Logit(p0_means[p])
   
   #### RUN THE BULK OF THE CODE ####
   for(i in 1:iter){
     #### Draw covariate effects and values ####
     b.spp <- NULL
-    b.spp <- rnorm(N, 0, runif(1, 0.5, 1)) # mean held at 0
     X <- NULL
+    lp0 <- NULL
+    p0 <- NULL
+    
+    b.spp <- rnorm(N, 0, runif(1, 0.5, 1)) # mean held at 0
     X <- rnorm(K, runif(1, 0, 2), runif(1, 2, 5))
+    lp0 <- rnorm(N, mu_p, sd_p) # Use if detection assigned by hyperparameters
+    p0 <- AntiLogit(lp0)
     
     #### Occupancy states ####
     # Storage:
