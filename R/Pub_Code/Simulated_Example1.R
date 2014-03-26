@@ -100,10 +100,11 @@ mat_Y <- ifelse(mat_Y > 0, 1, 0)
 
 # Plot the ordinated Y and Z matrices:
 quartz(height=6, width=3)
-print(Matrix_Plot(OrderMatrix(mat_Z), xlab="Species", ylab="Site"))
+print(Matrix_Plot(OrderMatrix(mat_Z), xlab="", ylab=""))
 
+rotate <- function(x) t(apply(x, 2, rev))
 quartz(height=6, width=3)
-print(Matrix_Plot(OrderMatrix(mat_Y), xlab="Species", ylab="Site"))    
+print(Matrix_Plot(rotate(rotate(OrderMatrix(mat_Y))), xlab="", ylab=""))    
 
 # Store all metacommunity metrics
 meta_Z <- NULL
@@ -160,6 +161,8 @@ Rhat_sd <- get_Rhat(post.psisd)
 #Store z_ij values. 
 post.z <- NULL
 post.z <- ggs(out, family="z")
+
+
 
 ######################################
 #### SAMPLE FROM THE Z_POSTERIOR  ####
@@ -282,3 +285,140 @@ for(i in 1:iter){
     Structure[i] <- "Gleasonian"
   }
 }
+
+###################################
+#### POSTERIORS OF EMS METRICS ####
+###################################
+library(ggplot2)
+
+Coher.plot <- ggplot(data.frame(Coher), aes(x=z))+
+  geom_histogram(binwidth=0.3)+
+  geom_histogram(binwidth=0.3, data=data.frame(Coher[which(Coher[, 3]>0.05), ]), color="grey")+
+  labs(x="", y="")+
+  theme_classic()+
+  geom_vline(xintercept=1.96, linetype=5)+ # Significance cut-off
+  scale_y_continuous(limits=c(0, 120), breaks=c(0, 60, 120))
+
+quartz(height=3.5, width=3.5)
+print(Coher.plot)
+  
+Turn.plot <- ggplot(data.frame(Turn), aes(x=z))+
+  geom_histogram(binwidth=0.3)+
+  geom_histogram(binwidth=0.3, data=data.frame(Turn[which(Coher[, 3]>0.05), ]), color="grey")+
+  labs(x="", y="")+
+  theme_classic()+
+  geom_vline(xintercept=c(-1.96), linetype=5)+
+  scale_x_continuous(breaks=c(-9, -3, 3))+
+  scale_y_continuous(limits=c(0, 90), breaks=c(0, 45, 90))
+
+quartz(height=3.5, width=3.5)
+print(Turn.plot)
+
+Bound.plot <- ggplot(data.frame(Bound), aes(x=index))+
+  geom_histogram(binwidth=0.02)+
+  geom_histogram(binwidth=0.02, data=data.frame(Bound[which(Coher[, 3]>0.05), ]), color="grey")+
+  labs(x="", y="")+
+  theme_classic()+
+  scale_x_continuous(breaks=c(1, 1.3, 1.6))+
+  scale_y_continuous(limits=c(0, 90), breaks=c(0, 45, 90))
+
+quartz(height=3.5, width=3.5)
+print(Bound.plot)
+
+####################################
+#### DISTRIBUTION OF STRUCTURES ####
+####################################
+
+head(Structure)
+unique(Structure)
+
+Structure2 <- Structure
+
+# Change the order to something more logical/ideal
+Structure2 <- replace(Structure2, which(Structure2=="Quasi-Clementsian"), "b_Quasi-Clem")
+Structure2 <- replace(Structure2, which(Structure2=="Clementsian"), "a_Clem")
+Structure2 <- replace(Structure2, which(Structure2=="Gleasonian"), "c_Gleas")
+Structure2 <- replace(Structure2, which(Structure2=="Random"), "f_Rand")
+Structure2 <- replace(Structure2, which(Structure2=="Quasi-Nested"), "e_Quasi-Nest")
+Structure2 <- replace(Structure2, which(Structure2=="Quasi-Gleasonian"), "d_Quasi_Gleas")
+
+Str.Counts <- as.data.frame(table(Structure2))
+Str.Counts$ID <- rep("A", nrow(Str.Counts)) # Need an ID var for the bar plot
+
+Str.Counts
+ 
+
+frac <- ggplot(Str.Counts, aes(x=ID, y=Freq, fill=Structure2))+
+  geom_bar(stat="identity")+
+  theme_classic()+
+  labs(x="", y="")+
+  scale_fill_grey(breaks=paste(Str.Counts$Structure),
+                    labels=c("Clementsian: 65.3%", "Quasi-Clementsian: 6.7%", "Gleasonian: 3.9%",
+                             "Quasi-Gleasonian: 0.1%", "Quasi-Nested: 0.3%", "Random: 23.7%"))+
+  theme(axis.title.x=element_blank(), axis.ticks.x=element_blank(),
+        axis.text.y=element_text(angle=90, hjust=0.5), 
+        axis.text.x=element_blank(), legend.title=element_blank())
+
+quartz(height=5, width=4)
+print(frac)
+
+###########################################
+#### LOOK AT PROB DETECTION POSTERIORS ####
+###########################################
+library(rjags)
+library(ggmcmc)
+
+mod2 <- jags.model(file = "OccMod_SingleYear.txt", 
+                  data = jags_d, n.chains = 3, n.adapt=1000,
+                  inits = list(z=zinit))
+update(mod2, n.iter=5000)
+out2 <- coda.samples(mod2, n.iter = 10000, variable.names = "p", thin=10)
+
+post.p <- NULL
+post.p <- ggs(out2, family="p")
+Rhat_p <- get_Rhat(post.p)
+head(post.p)
+
+medians <- NULL
+
+for(i in 1:length(levels(post.p$Parameter))){
+  sub <- NULL
+  sub <- subset(post.p, Parameter==paste(levels(post.p$Parameter)[i]))
+  medians[i] <- median(sub$value)
+}
+##########################      
+#######  METHOD 1  ####### 
+##########################      
+p.post.plot <- ggplot(post.p, aes(x=value, color=Parameter))+
+  geom_density(adjust=1.2)+
+  #geom_vline(xintercept=medians, linetype=5)+
+  theme_classic()+
+  scale_color_manual(values=rep("black", 12))+
+  theme(legend.position="none")+
+  labs(x="", y="")
+
+quartz(height=3.5, width=5)
+print(p.post.plot)
+
+##########################      
+#######  METHOD 2  ####### 
+##########################  
+
+actual_p <- data.frame(p0, Y=rep(0, length(p0)))
+
+p.post.plot2 <- ggplot(post.p, aes(x=post.p$value, fill=post.p$Parameter))+
+  geom_histogram()+
+  scale_fill_grey()+
+  theme_classic()+
+  theme(legend.position="none")+
+  labs(x="", y="")+
+  scale_y_continuous(limits=c(0, 2500), breaks=c(0, 1000, 2000))+
+  theme(axis.text.y=element_text(angle=90, hjust=0.5))
+                      
+for(i in 1:12){
+  p.post.plot2<- p.post.plot2+   
+    geom_point(x=p0[i], y=0)
+}
+
+quartz(height=3.5, width=5)
+print(p.post.plot2)
