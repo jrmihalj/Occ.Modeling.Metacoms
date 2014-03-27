@@ -362,9 +362,9 @@ frac <- ggplot(Str.Counts, aes(x=ID, y=Freq, fill=Structure2))+
 quartz(height=5, width=4)
 print(frac)
 
-###########################################
-#### LOOK AT PROB DETECTION POSTERIORS ####
-###########################################
+#################################################################################
+#### LOOK AT PROB DETECTION AND SPECIES-SPECIFIC COVARIATE EFFECT POSTERIORS ####
+#################################################################################
 library(rjags)
 library(ggmcmc)
 
@@ -372,53 +372,76 @@ mod2 <- jags.model(file = "OccMod_SingleYear.txt",
                   data = jags_d, n.chains = 3, n.adapt=1000,
                   inits = list(z=zinit))
 update(mod2, n.iter=5000)
-out2 <- coda.samples(mod2, n.iter = 10000, variable.names = "p", thin=10)
+out2 <- coda.samples(mod2, n.iter = 10000, variable.names = c("p", "b"), thin=10)
 
 post.p <- NULL
 post.p <- ggs(out2, family="p")
 Rhat_p <- get_Rhat(post.p)
 head(post.p)
 
-medians <- NULL
+post.b <- NULL
+post.b <- ggs(out2, family="b")
+Rhat_b <- get_Rhat(post.b)
+head(post.b)
 
-for(i in 1:length(levels(post.p$Parameter))){
-  sub <- NULL
-  sub <- subset(post.p, Parameter==paste(levels(post.p$Parameter)[i]))
-  medians[i] <- median(sub$value)
-}
-##########################      
-#######  METHOD 1  ####### 
-##########################      
-p.post.plot <- ggplot(post.p, aes(x=value, color=Parameter))+
-  geom_density(adjust=1.2)+
-  #geom_vline(xintercept=medians, linetype=5)+
-  theme_classic()+
-  scale_color_manual(values=rep("black", 12))+
-  theme(legend.position="none")+
-  labs(x="", y="")
+###########################      
+#######  DET. PROB  ####### 
+###########################  
+library(mcmcplots)
 
-quartz(height=3.5, width=5)
-print(p.post.plot)
+quartz(height=5, width=7)
+caterplot(out2, parms="p", col="black", val.lim=c(0, 1))
+caterpoints(p0)
 
-##########################      
-#######  METHOD 2  ####### 
-##########################  
 
-actual_p <- data.frame(p0, Y=rep(0, length(p0)))
+##############################      
+#######  COV. EFFECTS  ####### 
+############################## 
 
-p.post.plot2 <- ggplot(post.p, aes(x=post.p$value, fill=post.p$Parameter))+
-  geom_histogram()+
-  scale_fill_grey()+
-  theme_classic()+
-  theme(legend.position="none")+
-  labs(x="", y="")+
-  scale_y_continuous(limits=c(0, 2500), breaks=c(0, 1000, 2000))+
-  theme(axis.text.y=element_text(angle=90, hjust=0.5))
-                      
-for(i in 1:12){
-  p.post.plot2<- p.post.plot2+   
-    geom_point(x=p0[i], y=0)
-}
+quartz(height=5, width=7)
+caterplot(out2, parms="b", col="black")
+caterpoints(b.spp)
 
-quartz(height=3.5, width=5)
-print(p.post.plot2)
+################################
+####      UNUSED PLOTS     ##### 
+################################
+
+# p.post.plot <- NULL
+# p.post.plot <- ggplot(post.p, aes(x=post.p$value, fill=post.p$Parameter))+
+#   geom_histogram()+
+#   scale_fill_grey()+
+#   theme_classic()+
+#   theme(legend.position="none")+
+#   labs(x="", y="")+
+#   scale_y_continuous(limits=c(0, 2500), breaks=c(0, 1000, 2000))+
+#   theme(axis.text.y=element_text(angle=90, hjust=0.5))
+# 
+# # Add true p0 values. Have to add one at a time?:
+# for(i in 1:12){
+#   p.post.plot<- p.post.plot+   
+#     geom_point(x=p0[i], y=0, size=3, alpha=0.30)
+# }
+# 
+# quartz(height=3.5, width=5)
+# print(p.post.plot)
+# 
+# 
+# b.post.plot <- NULL
+# b.post.plot <- ggplot(post.b, aes(x=post.b$value, fill=post.b$Parameter))+
+#   geom_histogram()+
+#   scale_fill_grey()+
+#   theme_classic()+
+#   theme(legend.position="none")+
+#   labs(x="", y="")+
+#   scale_y_continuous(limits=c(0, 7000), breaks=c(0, 3500, 7000))+
+#   theme(axis.text.y=element_text(angle=90, hjust=0.5))
+# 
+# # Add true p0 values. Have to add one at a time?:
+# for(i in 1:12){
+#   b.post.plot<- b.post.plot+   
+#     geom_point(x=b.spp[i], y=0, size=3, alpha=0.30)
+# }
+# 
+# quartz(height=3.5, width=5)
+# print(b.post.plot)
+# 
