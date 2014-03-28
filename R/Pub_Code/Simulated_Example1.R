@@ -1,4 +1,17 @@
-# Establish some useful functions:
+# Simulated metacommunity example (first example presented in the text)
+# Demonstrates how to integrate occupancy modeling with EMS methods
+# Data stored in: Simulated_Example1.RData
+
+# Author: JR Mihaljevic
+# Date: March 2014
+
+#####################################################################################
+#-----------------------------------------------------------------------------------#
+#####################################################################################
+
+####################################################
+##########  ESTABLISH USEFUL FUNCTIONS  ############
+####################################################
 Logit <- function(x){
   log(x) - log(1 - x)
 }
@@ -7,6 +20,9 @@ AntiLogit <- function(x){
   exp(x) / (exp(x) + 1)
 }
 
+##################################################
+##########  LOAD REQUIRED R PACKAGES  ############
+##################################################
 require(metacom)
 require(rjags)
 require(ggmcmc)
@@ -28,16 +44,10 @@ J <- 3  # Number of sampling replicates per site
 b0 <- rep(Logit(0.6), N) # Change if desired
 
 # Community-level detection probability (hyper-parameters)
-#  p_mean <- 0.65
-#  mu_p <- Logit(p_mean) # Logit space
-#  sd_p <- 0.75 # standard dev.
-
-# Fixed detection across species, in logit space
 p_mean <- .50
 mu_p <- Logit(p_mean) # Logit space
 sd_p <- 0.75 # standard dev.
 
-#p0 <- rep(0.5, N) # Change if desired
 
 ######################
 #  START SIMULATION  #
@@ -334,7 +344,7 @@ unique(Structure)
 
 Structure2 <- Structure
 
-# Change the order to something more logical/ideal
+# Change the order to something more logical/ideal for plotting
 Structure2 <- replace(Structure2, which(Structure2=="Quasi-Clementsian"), "b_Quasi-Clem")
 Structure2 <- replace(Structure2, which(Structure2=="Clementsian"), "a_Clem")
 Structure2 <- replace(Structure2, which(Structure2=="Gleasonian"), "c_Gleas")
@@ -401,47 +411,3 @@ caterpoints(p0)
 quartz(height=5, width=7)
 caterplot(out2, parms="b", col="black")
 caterpoints(b.spp)
-
-################################
-####      UNUSED PLOTS     ##### 
-################################
-
-# p.post.plot <- NULL
-# p.post.plot <- ggplot(post.p, aes(x=post.p$value, fill=post.p$Parameter))+
-#   geom_histogram()+
-#   scale_fill_grey()+
-#   theme_classic()+
-#   theme(legend.position="none")+
-#   labs(x="", y="")+
-#   scale_y_continuous(limits=c(0, 2500), breaks=c(0, 1000, 2000))+
-#   theme(axis.text.y=element_text(angle=90, hjust=0.5))
-# 
-# # Add true p0 values. Have to add one at a time?:
-# for(i in 1:12){
-#   p.post.plot<- p.post.plot+   
-#     geom_point(x=p0[i], y=0, size=3, alpha=0.30)
-# }
-# 
-# quartz(height=3.5, width=5)
-# print(p.post.plot)
-# 
-# 
-# b.post.plot <- NULL
-# b.post.plot <- ggplot(post.b, aes(x=post.b$value, fill=post.b$Parameter))+
-#   geom_histogram()+
-#   scale_fill_grey()+
-#   theme_classic()+
-#   theme(legend.position="none")+
-#   labs(x="", y="")+
-#   scale_y_continuous(limits=c(0, 7000), breaks=c(0, 3500, 7000))+
-#   theme(axis.text.y=element_text(angle=90, hjust=0.5))
-# 
-# # Add true p0 values. Have to add one at a time?:
-# for(i in 1:12){
-#   b.post.plot<- b.post.plot+   
-#     geom_point(x=b.spp[i], y=0, size=3, alpha=0.30)
-# }
-# 
-# quartz(height=3.5, width=5)
-# print(b.post.plot)
-# 
