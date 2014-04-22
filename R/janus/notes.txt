@@ -15,6 +15,11 @@ qsub -q janus-debug mpitest8.sh
 # check status
 showq -r -u majo3748
 
+# interactive job
+module load moab/moab-7.2.2
+module load torque/torque-4.2.3
+qsub -I -q janus-short -l nodes=1:ppn=12
+
 ## installing stuff 
 wget URL_of_file XXX.tar.gz
 tar xzf XXX.tar.gz

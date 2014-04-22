@@ -1,10 +1,11 @@
 #!/bin/bash
 #PBS -N mpi_test
-#PBS -l walltime=02:00:00
-#PBS -l nodes=8:ppn=12
+#PBS -l walltime=04:00:00
+#PBS -l nodes=1:ppn=12
 #PBS -j oe
 
-#We just asked for 1 node with 4 processors and 1 minute of wall time.
+#We just asked for 1 node with 12 processors and 4 hours of wall time.
+# (in the janus-short queue)
 
 #The following will also load dependent modules, incl openmpi
 module load R/r-3.0.1
