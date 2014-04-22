@@ -4,6 +4,7 @@ library(snow, lib.loc = "/home/majo3748/Rpackages")
 library(permute, lib.loc = "/home/majo3748/Rpackages")
 library(vegan, lib.loc = "/home/majo3748/Rpackages")
 library(metacom, lib.loc = "/home/majo3748/Rpackages")
+library(reshape2)
 
 #Make the cluster
 cl <- makeCluster( mpi.universe.size(), type="MPI" )

@@ -3,7 +3,7 @@ ssh majo3748@login.rc.colorado.edu
 # then enter 1234 followed by the key on the fob
 
 # change to the projects folder
-cd /projects/majo3748/joe_occ
+cd /projects/majo3748/joe_occ/covariate_dist
 
 # How to submit an MPI job in R
 module load moab/moab-7.2.2
