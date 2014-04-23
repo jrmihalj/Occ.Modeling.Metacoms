@@ -1,4 +1,10 @@
 joes_f <- function(iter=1){
+  require(reshape2)
+  require(snow, lib.loc = "/home/majo3748/Rpackages")
+  require(permute, lib.loc = "/home/majo3748/Rpackages")
+  require(vegan, lib.loc = "/home/majo3748/Rpackages")
+  require(metacom, lib.loc = "/home/majo3748/Rpackages")
+  
   Logit <- function(x){
     log(x) - log(1 - x)
   }
@@ -43,6 +49,9 @@ joes_f <- function(iter=1){
   for (i in 1:nrow(mat.eff)){
     for(j in 1:nrow(mat.val)){
       for(it in 1:iter){      
+      print(paste("i = ", i, " of ", nrow(mat.eff), 
+      ". j = ", j, " of ", nrow(mat.val), 
+      ". it = ", it, " of ", iter, sep=""))
         b.spp <- NULL
         X <- NULL
       
@@ -59,6 +68,8 @@ joes_f <- function(iter=1){
         }else{
           X <- runif(K, mat.val[j, 1], mat.val[j, 2])
         }
+      
+      print("covariates set")
       
         # Set storage arrays:
         Z <- array(0, dim = c(N, K)) # 'True' occupancy states
@@ -77,6 +88,8 @@ joes_f <- function(iter=1){
           }
         }
       
+      print("occupancy simulated")
+      
         ### CHECK MATRIX FOR ROW/COLUMN SUMS ###
         # Check column sums
         if(any(colSums(Z) == 0) == TRUE){
@@ -88,14 +101,20 @@ joes_f <- function(iter=1){
           Z <- Z[-which(rowSums(Z) == 0), ]
         }
 
+      print("matrices checked")
+
         # CALCULATE AND STORE METACOMMUNITY METRICS #        
         meta <- NULL
         Coher <- NULL
         Turn <- NULL
         Bound <- NULL
         
-        meta <- tryCatch(Metacommunity(Z, method="r1", sims=1000),
+        print("trying Metacommunity")
+        
+        meta <- tryCatch(Metacommunity(Z, method="r1", sims=1000, allow.empty=TRUE),
                          error = function(e){"ERROR"})
+        
+        print("Metacommunity done")
         
         if(meta == "ERROR"){
           Structure[i, j, it] <- "ERROR"
@@ -106,6 +125,8 @@ joes_f <- function(iter=1){
           for(p in 1:3){
             Bound[p] <- meta[[4]][1,p]
           }
+          
+          print("determining structure")
           
           ###   DETERMINE METACOMMUNITY STRUCTURE   ####
           if(Coher[3] > 0.05){
@@ -161,6 +182,9 @@ joes_f <- function(iter=1){
                Bound[2] > 0.05){
             Structure[i, j, it] <- "Gleasonian"
           }
+          
+          print("done determining structure")
+          
         }
       }
     }
