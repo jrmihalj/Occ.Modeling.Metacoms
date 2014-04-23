@@ -234,5 +234,59 @@ Structure.melted <- melt(Structure) # Now these can be rowbinded
 
 
 
+###############################
+# Max ran the simulations on JANUS
+# Output .RData file with object 'xx'
+# 'xx': list of 84 elements, each a dataframe
 
+Z_data <- NULL
+for(i in 1:length(xx)){
+  Z_data <- rbind(Z_data, xx[[i]])
+}
+colnames(Z_data) <- c("Ef.dist", "Val.dist","Iter","Structure")
 
+# Get rid of "ERROR" ones
+remove <- which(Z_data$Structure=="ERROR") #129
+Z_data <- Z_data[-remove, ]
+Z_data$Structure <- factor(Z_data$Structure)
+levels(Z_data$Structure)
+
+# Make a table to summarize results:
+# I want the count of each structure observed for each combination of 
+# Cov.Eff.Dist and Cov.Val.Dist
+library(reshape2)
+casted <- dcast(Z_data, Ef.dist + Val.dist ~ Structure)
+Z_melt <- melt(casted, id.vars=c("Ef.dist", "Val.dist"))
+colnames(Z_melt) <- c("Ef.dist", "Val.dist", "Structure", "Count")
+Z_melt$Ef.dist <- as.factor(Z_melt$Ef.dist)
+Z_melt$Val.dist <- as.factor(Z_melt$Val.dist)
+
+#Change Ef.dist labels so I can order them on the graph:
+levels(Z_melt$Ef.dist)[levels(Z_melt$Ef.dist)=="1"] <- "N(0,0.5)"
+levels(Z_melt$Ef.dist)[levels(Z_melt$Ef.dist)=="2"] <- "N(0,1)"
+levels(Z_melt$Ef.dist)[levels(Z_melt$Ef.dist)=="3"] <- "U(-3,0)"
+
+# Graph the frequencies of each structure:
+# First, set up a color-blind-friendly color palette:
+cbPalette <- c("#999999", "#E69F00", "#CC79A7", "#009E73", "#F0E442", 
+               "#0072B2", "#D55E00", "#56B4E9", "#CC79A7", "#000000")
+c("#999999", "#E69F00", "#CC79A7", "#009E73", "#F0E442", 
+  "#0072B2", "#D55E00", "#56B4E9", "#CC79A7", "#000000")
+
+library(ggplot2)
+frac <- ggplot(Z_melt, aes(x=Val.dist, y=Count, fill=Structure))+
+  geom_bar(stat="identity")+
+  theme_classic()+
+  facet_grid(Ef.dist~.)+
+  scale_y_continuous(breaks=c(0, 500, 1000))+
+  labs(x=NULL, y=NULL)+
+  scale_fill_manual(values=cbPalette, breaks=c("Random", "Clementsian", "Quasi-Clementsian",
+                                               "Gleasonian", "Quasi-Gleasonian", "Nested", 
+                                               "Quasi-Nested", "EvenSpaced", "Quasi-EvenSpaced", 
+                                               "Checkerboard"))+
+  scale_x_discrete(limits=c("1","5","2","6","3","7","4","8"),
+                   labels=c("N(0,1)","U(-1,1)","N(0,5)","U(-4,4)","N(2,1)","U(0,3)","N(5,2)","U(0,10)"))+
+  theme(strip.background=element_rect(color="black", fill="white"))
+
+quartz(height=10, width=10)
+print(frac) 
