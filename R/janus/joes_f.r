@@ -100,7 +100,10 @@ joes_f <- function(iter=1){
         if(any(rowSums(Z) == 0) == TRUE){
           Z <- Z[-which(rowSums(Z) == 0), ]
         }
-
+        
+        # Transpose the matrix to fit 'vegan' requirements
+        Z <- aperm(Z, c(2,1))
+      
       print("matrices checked")
 
         # CALCULATE AND STORE METACOMMUNITY METRICS #        
