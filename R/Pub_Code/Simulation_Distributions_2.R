@@ -246,7 +246,7 @@ for(i in 1:length(xx)){
 colnames(Z_data) <- c("Ef.dist", "Val.dist","Iter","Structure")
 
 # Get rid of "ERROR" ones
-remove <- which(Z_data$Structure=="ERROR") #129
+remove <- which(Z_data$Structure=="ERROR") #139
 Z_data <- Z_data[-remove, ]
 Z_data$Structure <- factor(Z_data$Structure)
 levels(Z_data$Structure)
@@ -269,9 +269,7 @@ levels(Z_melt$Ef.dist)[levels(Z_melt$Ef.dist)=="3"] <- "U(-3,0)"
 # Graph the frequencies of each structure:
 # First, set up a color-blind-friendly color palette:
 cbPalette <- c("#999999", "#E69F00", "#CC79A7", "#009E73", "#F0E442", 
-               "#0072B2", "#D55E00", "#56B4E9", "#CC79A7", "#000000")
-c("#999999", "#E69F00", "#CC79A7", "#009E73", "#F0E442", 
-  "#0072B2", "#D55E00", "#56B4E9", "#CC79A7", "#000000")
+               "#0072B2", "#D55E00", "#56B4E9", "#000000")
 
 library(ggplot2)
 frac <- ggplot(Z_melt, aes(x=Val.dist, y=Count, fill=Structure))+
@@ -282,11 +280,12 @@ frac <- ggplot(Z_melt, aes(x=Val.dist, y=Count, fill=Structure))+
   labs(x=NULL, y=NULL)+
   scale_fill_manual(values=cbPalette, breaks=c("Random", "Clementsian", "Quasi-Clementsian",
                                                "Gleasonian", "Quasi-Gleasonian", "Nested", 
-                                               "Quasi-Nested", "EvenSpaced", "Quasi-EvenSpaced", 
+                                               "Quasi-Nested", "EvenSpaced", 
                                                "Checkerboard"))+
   scale_x_discrete(limits=c("1","5","2","6","3","7","4","8"),
                    labels=c("N(0,1)","U(-1,1)","N(0,5)","U(-4,4)","N(2,1)","U(0,3)","N(5,2)","U(0,10)"))+
-  theme(strip.background=element_rect(color="black", fill="white"))
+  theme(strip.background=element_rect(color="black", fill="white"),
+        axis.text.y=element_text(angle=90, hjust=.5))
 
 quartz(height=10, width=10)
 print(frac) 
