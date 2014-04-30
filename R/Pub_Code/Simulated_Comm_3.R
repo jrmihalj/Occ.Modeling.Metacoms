@@ -169,9 +169,9 @@ for(p in 1:length(p0s)){
     TurnZY <- array(0, dim=c(5, 2)) # 2 Columns: Z and Y
     BoundZY <- array(0, dim=c(3, 2)) # 2 Coumns: Z and Y
     
-    meta_Z <- tryCatch(Metacommunity(mat_Z, method="r1", sims=1000),
+    meta_Z <- tryCatch(Metacommunity(mat_Z, method="r1", sims=1000, allow.empty=T),
                        error = function(e){"ERROR"})
-    meta_Y <- tryCatch(Metacommunity(mat_Y, method="r1", sims=1000),
+    meta_Y <- tryCatch(Metacommunity(mat_Y, method="r1", sims=1000, allow.empty=T),
                        error = function(e){"ERROR"})
     
     ####################################
@@ -368,7 +368,7 @@ for(p in 1:length(p0s)){
         Turn.Zpost <- NULL
         Bound.Zpost <- NULL
         
-        meta_Zpost <- tryCatch(Metacommunity(mat_Zpost, method="r1", sims=1000),
+        meta_Zpost <- tryCatch(Metacommunity(mat_Zpost, method="r1", sims=1000, allow.empty=T),
                                error = function(e){"ERROR"})
         
         ####################################
