@@ -93,7 +93,7 @@ Structure.Zpost <- array("A", dim=c(iter, 1000)) # 1000 Z posteriors
 ###  START SIMULATION  ###
 ##########################
 
-for(p in 1:length(p0s)){
+for(p in 1:length(p0_means)){
   
   #### RUN THE ENTIRE CODE FOR EACH OF THE SPECIFIED DETECTION PROBABILITIES ####
   mu_p <- NULL
