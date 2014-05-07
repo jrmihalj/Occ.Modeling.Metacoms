@@ -4,7 +4,7 @@
 # Number of Z_matrices to have metacommunity structure assessed defined by z.iter
 #   - as is coded, max(z.iter)=1000
 
-joes_metacom_f <- function(p_mean=0.9, iter=1, z.iter=1000){
+joes_metacom_f <- function(p_mean=0.50, iter=1, z.iter=1000){
   
   # Establish some useful functions:
   Logit <- function(x){
@@ -51,7 +51,7 @@ joes_metacom_f <- function(p_mean=0.9, iter=1, z.iter=1000){
   ##############################################
   
   require(metacom) # and all dependencies
-  require(rjags) # and all dependencies
+  require(coda) # and all dependencies
   require(ggmcmc) # and all dependencies
   
   #######################
@@ -79,7 +79,7 @@ joes_metacom_f <- function(p_mean=0.9, iter=1, z.iter=1000){
     # Fixed occurrence across species, in logit space
     b0 <- rep(Logit(0.6), N) # Change if desired
     # Detection probabilities:
-    mu_p <- NULL
+    mu_p <- NULL; sd_p <- NULL
     mu_p <- Logit(p_mean)
     sd_p <- 0.75 #St. Dev. fixed for all simulations
     
@@ -253,6 +253,20 @@ joes_metacom_f <- function(p_mean=0.9, iter=1, z.iter=1000){
       K = ncol(Y)
       N = nrow(Y)
       J = J
+      # current working directory:
+      current_dir <- paste(getwd())
+      
+      # Make a new working directory (unique per node) name:
+      wd.name <- paste("iter", runif(1,1,10), sep="_")
+      system(paste("mkdir", wd.name, sep=" "))
+      
+      # Copy JAGS script files to new working directory:
+      system(paste("cp", "./jags.script.cmd", paste("./", wd.name, "/jags.script.cmd", sep="")))
+      system(paste("cp", "./OccMod_SingleYear.txt", paste("./", wd.name, "/OccMod_SingleYear.txt", sep="")))
+      
+      # Now change working directory to new one:
+      setwd(paste("./", wd.name, sep=""))
+      
       # Write a file of the data:
       dump(c("X", "Y", "K", "N", "J"), file="data.R")
       
@@ -269,23 +283,33 @@ joes_metacom_f <- function(p_mean=0.9, iter=1, z.iter=1000){
       system("jags jags.script.cmd")
       
       # read the coda files:
+      ch1 <- NULL; ch2 <- NULL; ch3 <- NULL;
       ch1 <- read.coda("CODAchain1.txt", "CODAindex.txt", quiet=T)
       ch2 <- read.coda("CODAchain2.txt", "CODAindex.txt", quiet=T)
       ch3 <- read.coda("CODAchain3.txt", "CODAindex.txt", quiet=T)
       
+      out <- NULL
       out <- mcmc.list(list(ch1, ch2, ch3))
       
-      # Check for convergence species-specific prob. detection (n=N):
+      # Check for convergence for these species' detection probs:
       post.p <- NULL
       Rhat_p <- NULL
       
       post.p <- ggs(out, family="p")
       Rhat_p <- get_Rhat(post.p)
       
-      # If not converged, update model until convergence is achieved
+      # Re-set working directory:
+      setwd("../")
+      # Delete all newly created files and directory:
+      system(paste("rm -r", wd.name, sep=" "))
+      
+      # If not converged:
       if(any(Rhat_p > 1.1)){
+        
         Structure.Zpost[i, 1:z.iter] <- rep("Not_Converged", times=z.iter)
+        
       }else{
+        
         #Store z_ij values. 
         post.z <- NULL
         post.z <- ggs(out, family="z")
@@ -348,7 +372,7 @@ joes_metacom_f <- function(p_mean=0.9, iter=1, z.iter=1000){
             Coher.Zpost <- as.numeric(as.character(meta_Zpost[[2]][1:5, ]))
             Turn.Zpost <- as.numeric(as.character(meta_Zpost[[3]][1:5, ]))
             for(q in 1:3){
-              Bound.Zpost[q] <- meta[[4]][1,q]
+              Bound.Zpost[q] <- meta_Zpost[[4]][1,q]
             }
             
             #############################################
@@ -426,3 +450,6 @@ joes_metacom_f <- function(p_mean=0.9, iter=1, z.iter=1000){
                   Structure.Zpost = Structure.Zpost)
   return(results)
 }
+
+# test <- NULL
+# test <- joes_metacom_f(p_mean=0.5, iter=1, z.iter=50)
