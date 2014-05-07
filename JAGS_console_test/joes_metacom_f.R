@@ -1,3 +1,9 @@
+# Function to use in parallel computing:
+# Want to vary p_mean at three levels: 0.90, 0.75, 0.50
+#   - we'll want ~1000 iterations (iter) per value of p_mean
+# Number of Z_matrices to have metacommunity structure assessed defined by z.iter
+#   - as is coded, max(z.iter)=1000
+
 joes_metacom_f <- function(p_mean=0.9, iter=1, z.iter=1000){
   
   # Establish some useful functions:
