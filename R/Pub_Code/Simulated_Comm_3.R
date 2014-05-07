@@ -71,11 +71,6 @@ require(ggmcmc) # and all dependencies
 # Set number of iterations (How many unique Z and Y matrices to create?)
 iter <- 1000
 
-# Establish basic parameters for the simulation:
-N <- 12 # Number of species
-K <- 75 # Number of sites
-J <- 4  # Number of sampling replicates per site
-
 # Base-line occurrence probability
 # Fixed occurrence across species, in logit space
 b0 <- rep(Logit(0.6), N) # Change if desired
@@ -102,6 +97,11 @@ for(p in 1:length(p0_means)){
   #### RUN THE BULK OF THE CODE ####
   for(i in 1:iter){
     #### Draw covariate effects and values ####
+    # Establish basic parameters for the simulation:
+    N <- 12 # Number of species
+    K <- 75 # Number of sites
+    J <- 4  # Number of sampling replicates per site
+    
     b.spp <- NULL
     X <- NULL
     lp0 <- NULL
@@ -268,184 +268,173 @@ for(p in 1:length(p0_means)){
       ############################################
       ######## BAYESIAN ESTIMATES FOR Z ##########
       ############################################
-      jags_d <- NULL
-      jags_d <- list(X=X,
-                     Y=Y,
-                     K=ncol(Y),
-                     N=nrow(Y),
-                     J=J)
+      # Update the data:
+      X = X
+      Y = Y
+      K = ncol(Y)
+      N = nrow(Y)
+      J = J
+      # Write a file of the data:
+      dump(c("X", "Y", "K", "N", "J"), file="data.R")
       
       # Set initial parameters:
       # Z values (unobserved)
       zinit <- NULL
       zinit <- ifelse(Y > 0, 1, 0)
+      z = zinit
       
-      # Start the model
-      params <- c("lpsiMean", "lpsiSD", "z")
+      # Write a file of the inits:
+      dump("z", file="inits.R")
       
-      mod <- NULL
-      mod <- jags.model(file = "OccMod_SingleYear.txt", 
-                        data = jags_d, n.chains = 3, n.adapt=1000,
-                        inits = list(z=zinit))
-      update(mod, n.iter=5000) # 5000 burn-in
+      # Run the JAGS script file:
+      system("jags jags.script.cmd")
       
-      out <- NULL
-      out <- coda.samples(mod, n.iter = 10000, variable.names = params, thin=10)
+      # read the coda files:
+      ch1 <- read.coda("CODAchain1.txt", "CODAindex.txt", quiet=T)
+      ch2 <- read.coda("CODAchain2.txt", "CODAindex.txt", quiet=T)
+      ch3 <- read.coda("CODAchain3.txt", "CODAindex.txt", quiet=T)
+      
+      out <- mcmc.list(list(ch1, ch2, ch3))
       
       # Check for convergence for these two parameters:
       post.psimean <- NULL
-      post.psisd <- NULL
-      Rhat_mean <- NULL
-      Rhat_sd <- NULL
+      post.pmean <- NULL
+      Rhat_psimean <- NULL
+      Rhat_pmean <- NULL
       
       post.psimean <- ggs(out, family="lpsiMean")
-      post.psisd <- ggs(out, family="lpsiSD")
-      Rhat_mean <- get_Rhat(post.psimean)
-      Rhat_sd <- get_Rhat(post.psisd)
+      post.pmean <- ggs(out, family="lpMean")
+      Rhat_psimean <- get_Rhat(post.psimean)
+      Rhat_pmean <- get_Rhat(post.pmean)
       
       # If not converged, update model until convergence is achieved
       if(Rhat_mean > 1.1 | Rhat_sd > 1.1){
-        repeat{
-          update(mod, n.iter=5000) # An extra 5,000 burn-in
+        Structure.Zpost[i, 1:1000] <- rep("Not_Converged", times=1000)
+      }else{
+        #Store z_ij values. 
+        post.z <- NULL
+        post.z <- ggs(out, family="z")
+        
+        ####################################################
+        ######## CONSTRUCT Z FROM BAYESIAN OUTPUT ##########
+        ####################################################
+        
+        for(j in 1:1000){ # 1000 draws from the posterior
           
-          out <- NULL
-          out <- coda.samples(mod, n.iter = 10000, variable.names = params, thin=10)
+          # Randomly choose from which chain the sample will originate:
+          chain <- NULL
+          chain <- sample(c(1:3), 1)
           
-          post.psimean <- NULL
-          post.psisd <- NULL
-          Rhat_mean <- NULL
-          Rhat_sd <- NULL
-          post.psimean <- ggs(out, family="lpsiMean")
-          post.psisd <- ggs(out, family="lpsiSD")
-          Rhat_mean <- get_Rhat(post.psimean)
-          Rhat_sd <- get_Rhat(post.psisd)
+          # Create a subset vector of the values for all z[n, k]:
+          subset <- NULL
+          subset <- subset(post.z, Chain==chain & Iteration==paste(j))$value
+          # Store this vector as a matrix
+          Zpost <- NULL
+          Zpost <- matrix(subset, nrow=nrow(Y), ncol=ncol(Y), byrow=F)
           
-          if(Rhat_mean < 1.1 & Rhat_sd < 1.1) {break}
-        }
-      }
-      
-      #Store z_ij values. 
-      post.z <- NULL
-      post.z <- ggs(out, family="z")
-      
-      ####################################################
-      ######## CONSTRUCT Z FROM BAYESIAN OUTPUT ##########
-      ####################################################
-      
-      for(j in 1:1000){ # 1000 draws from the posterior
-        
-        # Randomly choose from which chain the sample will originate:
-        chain <- NULL
-        chain <- sample(c(1:3), 1)
-        
-        # Create a subset vector of the values for all z[n, k]:
-        subset <- NULL
-        subset <- subset(post.z, Chain==chain & Iteration==paste(j))$value
-        # Store this vector as a matrix
-        Zpost <- NULL
-        Zpost <- matrix(subset, nrow=nrow(Y), ncol=ncol(Y), byrow=F)
-        
-        
-        # Check for zero sum columns/rows
-        if(any(colSums(Zpost) == 0) == TRUE){
-          Zpost <- Zpost[, -which(colSums(Zpost) == 0)]
-        }
-        if(any(rowSums(Zpost) == 0) == TRUE){
-          Zpost <- Zpost[-which(rowSums(Zpost) == 0), ]
-        }
-        
-        #############################################
-        # CALCULATE AND STORE METACOMMUNITY METRICS #
-        ##########    FOR EACH Z_POST    ############
-        #############################################
-        
-        mat_Zpost <- NULL
-        mat_Zpost <- aperm(Zpost, c(2,1)) # Transpose
-        
-        # Store all metacommunity metrics
-        meta_Zpost <- NULL
-        Coher.Zpost <- NULL
-        Turn.Zpost <- NULL
-        Bound.Zpost <- NULL
-        
-        meta_Zpost <- tryCatch(Metacommunity(mat_Zpost, method="r1", sims=1000, allow.empty=T),
-                               error = function(e){"ERROR"})
-        
-        ####################################
-        ### DETERMINE IF ERRORS OCCURRED ###
-        ####################################
-        
-        if(meta_Zpost == "ERROR"){
-          Structure.Zpost[i, j] <- "ERROR"
-        }else {
+          
+          # Check for zero sum columns/rows
+          if(any(colSums(Zpost) == 0) == TRUE){
+            Zpost <- Zpost[, -which(colSums(Zpost) == 0)]
+          }
+          if(any(rowSums(Zpost) == 0) == TRUE){
+            Zpost <- Zpost[-which(rowSums(Zpost) == 0), ]
+          }
+          
           #############################################
           # CALCULATE AND STORE METACOMMUNITY METRICS #
-          ############    FOR Z.post     ##############
+          ##########    FOR EACH Z_POST    ############
           #############################################
           
-          Coher.Zpost <- as.numeric(as.character(meta_Zpost[[2]][1:5, ]))
-          Turn.Zpost <- as.numeric(as.character(meta_Zpost[[3]][1:5, ]))
-          for(q in 1:3){
-            Bound.Zpost[q] <- meta[[4]][1,q]
-          }
+          mat_Zpost <- NULL
+          mat_Zpost <- aperm(Zpost, c(2,1)) # Transpose
           
-          #############################################
-          ###   DETERMINE METACOMMUNITY STRUCTURE   ###
-          ############    FOR Z.post     ##############        
-          #############################################
+          # Store all metacommunity metrics
+          meta_Zpost <- NULL
+          Coher.Zpost <- NULL
+          Turn.Zpost <- NULL
+          Bound.Zpost <- NULL
           
-          if(Coher.Zpost[3] > 0.05){
-            Structure.Zpost[i, j] <- "Random"
-          }
+          meta_Zpost <- tryCatch(Metacommunity(mat_Zpost, method="r1", sims=1000, allow.empty=T),
+                                 error = function(e){"ERROR"})
           
-          if(Coher.Zpost[3] <= 0.05 & Coher.Zpost[1] > Coher.Zpost[4]){
-            Structure.Zpost[i, j] <- "Checkerboard"
-          }
+          ####################################
+          ### DETERMINE IF ERRORS OCCURRED ###
+          ####################################
           
-          if(Coher.Zpost[3] <= 0.05 & Coher.Zpost[1] < Coher.Zpost[4] & 
-               Turn.Zpost[3] > 0.05 & Turn.Zpost[1] < Turn.Zpost[4]){
-            Structure.Zpost[i, j] <- "Quasi-Nested"
-          }
-          
-          if(Coher.Zpost[3] <= 0.05 & Coher.Zpost[1] < Coher.Zpost[4] & 
-               Turn.Zpost[3] > 0.05 & Turn.Zpost[1] > Turn.Zpost[4] &
-               Bound.Zpost[1] > 1 & Bound.Zpost[2] <= 0.05){
-            Structure.Zpost[i, j] <- "Quasi-Clementsian"
-          }
-          
-          if(Coher.Zpost[3] <= 0.05 & Coher.Zpost[1] < Coher.Zpost[4] & 
-               Turn.Zpost[3] > 0.05 & Turn.Zpost[1] > Turn.Zpost[4] &
-               Bound.Zpost[1] < 1 & Bound.Zpost[2] <= 0.05){
-            Structure.Zpost[i, j] <- "Quasi-EvenSpaced"
-          }
-          
-          if(Coher.Zpost[3] <= 0.05 & Coher.Zpost[1] < Coher.Zpost[4] & 
-               Turn.Zpost[3] > 0.05 & Turn.Zpost[1] > Turn.Zpost[4] &
-               Bound.Zpost[2] > 0.05){
-            Structure.Zpost[i, j] <- "Quasi-Gleasonian"
-          }
-          
-          if(Coher.Zpost[3] <= 0.05 & Coher.Zpost[1] < Coher.Zpost[4] & 
-               Turn.Zpost[3] <= 0.05 & Turn.Zpost[1] < Turn.Zpost[4]){
-            Structure.Zpost[i, j] <- "Nested"
-          }
-          
-          if(Coher.Zpost[3] <= 0.05 & Coher.Zpost[1] < Coher.Zpost[4] & 
-               Turn.Zpost[3] <= 0.05 & Turn.Zpost[1] > Turn.Zpost[4] &
-               Bound.Zpost[1] > 1 & Bound.Zpost[2] <= 0.05){
-            Structure.Zpost[i, j] <- "Clementsian"
-          }
-          
-          if(Coher.Zpost[3] <= 0.05 & Coher.Zpost[1] < Coher.Zpost[4] & 
-               Turn.Zpost[3] <= 0.05 & Turn.Zpost[1] > Turn.Zpost[4] &
-               Bound.Zpost[1] < 1 & Bound.Zpost[2] <= 0.05){
-            Structure.Zpost[i, j] <- "EvenSpaced"
-          }
-          
-          if(Coher.Zpost[3] <= 0.05 & Coher.Zpost[1] < Coher.Zpost[4] & 
-               Turn.Zpost[3] <= 0.05 & Turn.Zpost[1] > Turn.Zpost[4] &
-               Bound.Zpost[2] > 0.05){
-            Structure.Zpost[i, j] <- "Gleasonian"
+          if(meta_Zpost == "ERROR"){
+            Structure.Zpost[i, j] <- "ERROR"
+          }else {
+            #############################################
+            # CALCULATE AND STORE METACOMMUNITY METRICS #
+            ############    FOR Z.post     ##############
+            #############################################
+            
+            Coher.Zpost <- as.numeric(as.character(meta_Zpost[[2]][1:5, ]))
+            Turn.Zpost <- as.numeric(as.character(meta_Zpost[[3]][1:5, ]))
+            for(q in 1:3){
+              Bound.Zpost[q] <- meta[[4]][1,q]
+            }
+            
+            #############################################
+            ###   DETERMINE METACOMMUNITY STRUCTURE   ###
+            ############    FOR Z.post     ##############        
+            #############################################
+            
+            if(Coher.Zpost[3] > 0.05){
+              Structure.Zpost[i, j] <- "Random"
+            }
+            
+            if(Coher.Zpost[3] <= 0.05 & Coher.Zpost[1] > Coher.Zpost[4]){
+              Structure.Zpost[i, j] <- "Checkerboard"
+            }
+            
+            if(Coher.Zpost[3] <= 0.05 & Coher.Zpost[1] < Coher.Zpost[4] & 
+                 Turn.Zpost[3] > 0.05 & Turn.Zpost[1] < Turn.Zpost[4]){
+              Structure.Zpost[i, j] <- "Quasi-Nested"
+            }
+            
+            if(Coher.Zpost[3] <= 0.05 & Coher.Zpost[1] < Coher.Zpost[4] & 
+                 Turn.Zpost[3] > 0.05 & Turn.Zpost[1] > Turn.Zpost[4] &
+                 Bound.Zpost[1] > 1 & Bound.Zpost[2] <= 0.05){
+              Structure.Zpost[i, j] <- "Quasi-Clementsian"
+            }
+            
+            if(Coher.Zpost[3] <= 0.05 & Coher.Zpost[1] < Coher.Zpost[4] & 
+                 Turn.Zpost[3] > 0.05 & Turn.Zpost[1] > Turn.Zpost[4] &
+                 Bound.Zpost[1] < 1 & Bound.Zpost[2] <= 0.05){
+              Structure.Zpost[i, j] <- "Quasi-EvenSpaced"
+            }
+            
+            if(Coher.Zpost[3] <= 0.05 & Coher.Zpost[1] < Coher.Zpost[4] & 
+                 Turn.Zpost[3] > 0.05 & Turn.Zpost[1] > Turn.Zpost[4] &
+                 Bound.Zpost[2] > 0.05){
+              Structure.Zpost[i, j] <- "Quasi-Gleasonian"
+            }
+            
+            if(Coher.Zpost[3] <= 0.05 & Coher.Zpost[1] < Coher.Zpost[4] & 
+                 Turn.Zpost[3] <= 0.05 & Turn.Zpost[1] < Turn.Zpost[4]){
+              Structure.Zpost[i, j] <- "Nested"
+            }
+            
+            if(Coher.Zpost[3] <= 0.05 & Coher.Zpost[1] < Coher.Zpost[4] & 
+                 Turn.Zpost[3] <= 0.05 & Turn.Zpost[1] > Turn.Zpost[4] &
+                 Bound.Zpost[1] > 1 & Bound.Zpost[2] <= 0.05){
+              Structure.Zpost[i, j] <- "Clementsian"
+            }
+            
+            if(Coher.Zpost[3] <= 0.05 & Coher.Zpost[1] < Coher.Zpost[4] & 
+                 Turn.Zpost[3] <= 0.05 & Turn.Zpost[1] > Turn.Zpost[4] &
+                 Bound.Zpost[1] < 1 & Bound.Zpost[2] <= 0.05){
+              Structure.Zpost[i, j] <- "EvenSpaced"
+            }
+            
+            if(Coher.Zpost[3] <= 0.05 & Coher.Zpost[1] < Coher.Zpost[4] & 
+                 Turn.Zpost[3] <= 0.05 & Turn.Zpost[1] > Turn.Zpost[4] &
+                 Bound.Zpost[2] > 0.05){
+              Structure.Zpost[i, j] <- "Gleasonian"
+            }
+            
           }
           
         }
@@ -457,6 +446,9 @@ for(p in 1:length(p0_means)){
   }
   
 }
+      
+      
+      
 
 
 ####################
