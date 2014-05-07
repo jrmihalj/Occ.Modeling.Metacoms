@@ -77,7 +77,7 @@ b0 <- rep(Logit(0.6), N) # Change if desired
 
 # Fixed detection probability across species.
 # The simulation will cycle through each of these:
-p0_means <- c(0.90, 0.75, 0.50)
+p0_mean <- c(0.90, 0.75, 0.50)
 sd_p <- 0.75 #St. Dev. fixed for all simulations
 
 # Storage (Outputs):
@@ -88,24 +88,25 @@ Structure.Zpost <- array("A", dim=c(iter, 1000)) # 1000 Z posteriors
 ###  START SIMULATION  ###
 ##########################
 
-for(p in 1:length(p0_means)){
+for(p in 1:length(p0_mean)){
   
   #### RUN THE ENTIRE CODE FOR EACH OF THE SPECIFIED DETECTION PROBABILITIES ####
   mu_p <- NULL
-  mu_p <- Logit(p0_means[p])
+  mu_p <- Logit(p0_mean[p])
   
   #### RUN THE BULK OF THE CODE ####
   for(i in 1:iter){
-    #### Draw covariate effects and values ####
+    
     # Establish basic parameters for the simulation:
     N <- 12 # Number of species
     K <- 75 # Number of sites
     J <- 4  # Number of sampling replicates per site
     
-    b.spp <- NULL
-    X <- NULL
-    lp0 <- NULL
-    p0 <- NULL
+    # Fixed occurrence across species, in logit space
+    b0 <- rep(Logit(0.6), N) # Change if desired
+    
+    #### Draw covariate effects and values ####
+    b.spp <- NULL; X <- NULL; lp0 <- NULL; p0 <- NULL
     
     b.spp <- rnorm(N, 0, runif(1, 0.5, 1)) # mean held at 0
     X <- rnorm(K, runif(1, 0, 2), runif(1, 2, 5))
@@ -296,19 +297,15 @@ for(p in 1:length(p0_means)){
       
       out <- mcmc.list(list(ch1, ch2, ch3))
       
-      # Check for convergence for these two parameters:
-      post.psimean <- NULL
-      post.pmean <- NULL
-      Rhat_psimean <- NULL
-      Rhat_pmean <- NULL
+      # Check for convergence species-specific prob. detection (n=N):
+      post.p <- NULL
+      Rhat_p <- NULL
       
-      post.psimean <- ggs(out, family="lpsiMean")
-      post.pmean <- ggs(out, family="lpMean")
-      Rhat_psimean <- get_Rhat(post.psimean)
-      Rhat_pmean <- get_Rhat(post.pmean)
+      post.p <- ggs(out, family="p")
+      Rhat_p <- get_Rhat(post.p)
       
       # If not converged, update model until convergence is achieved
-      if(Rhat_mean > 1.1 | Rhat_sd > 1.1){
+      if(any(Rhat_p > 1.1)){
         Structure.Zpost[i, 1:1000] <- rep("Not_Converged", times=1000)
       }else{
         #Store z_ij values. 
