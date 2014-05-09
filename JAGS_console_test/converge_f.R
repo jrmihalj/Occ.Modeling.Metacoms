@@ -67,7 +67,7 @@ require(ggmcmc) # and all dependencies
 #######################
 
 # Set number of iterations (How many unique Z and Y matrices to create?)
-iter <- 20
+iter <- 2
 
 # Fixed detection probability across species.
 # The simulation will cycle through each of these:
@@ -88,7 +88,7 @@ for(i in 1:iter){
   J <- 4  # Number of sampling replicates per site
   
   mu_p <- NULL
-  mu_p <- Logit(p0_means[1])
+  mu_p <- Logit(p0_means)
   
   # Base-line occurrence probability
   b0 <- rep(Logit(0.6), N) # Change if desired
@@ -189,6 +189,20 @@ for(i in 1:iter){
     K = ncol(Y)
     N = nrow(Y)
     J = J
+    # current working directory:
+    current_dir <- paste(getwd())
+    
+    # Make a new working directory (unique per node) name:
+    wd.name <- paste("iter", runif(1,1,10), sep="_")
+    system(paste("mkdir", wd.name, sep=" "))
+    
+    # Copy JAGS script files to new working directory:
+    system(paste("cp", "./jags.script.cmd", paste("./", wd.name, "/jags.script.cmd", sep="")))
+    system(paste("cp", "./OccMod_SingleYear.txt", paste("./", wd.name, "/OccMod_SingleYear.txt", sep="")))
+    
+    # Now change working directory to new one:
+    setwd(paste("./", wd.name, sep=""))
+    
     # Write a file of the data:
     dump(c("X", "Y", "K", "N", "J"), file="data.R")
     
@@ -203,7 +217,6 @@ for(i in 1:iter){
     
     # Run the JAGS script file:
     system("jags jags.script.cmd")
-    
     
     # read the coda files:
     ch1 <- NULL; ch2 <- NULL; ch3 <- NULL;
@@ -223,6 +236,12 @@ for(i in 1:iter){
     
     if(any(Rhat_p > 1.1, na.rm=T)){
       Converge[i] <- FALSE }else{ Converge[i] <- TRUE}
+    
+    # Re-set working directory:
+    setwd("../")
+    
+    # Delete all newly created files and directory:
+    system(paste("rm -r", wd.name, sep=" "))
   }
 }
 
