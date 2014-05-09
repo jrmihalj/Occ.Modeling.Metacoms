@@ -372,6 +372,29 @@ frac <- ggplot(Str.Counts, aes(x=ID, y=Freq, fill=Structure2))+
 quartz(height=5, width=4)
 print(frac)
 
+#####################################
+####   HEAT MAP OF Z-POSTERIOR   ####
+#####################################
+
+Z_heat <- mat.or.vec(nr=K, nc=N)
+for(i in 1:1000){
+  Z_heat <- Z_heat + z.post[,,i]
+}
+Z_heat <- Z_heat/1000 # Now each cell is a probability of occurrence averaged over z.post
+rownames(Z_heat) <- as.factor(1:K)
+colnames(Z_heat) <- as.factor(1:N)
+# Conduct a CCA and order the sites based on the first axes scores:
+library(vegan)
+
+Z_heat.CCA <- decorana(Z_heat, ira=0) # CHECK CONVERGENCE, ETC.
+Z_heat.CCA.sites <- Z_heat.CCA$rproj[, 1]
+Z_heat.CCA.spp <- Z_heat.CCA$cproj[, 1]
+
+Z_heat_ord <- Z_heat[order(Z_heat.CCA.sites, decreasing = FALSE), 
+                     order(Z_heat.CCA.spp, decreasing = FALSE)]
+
+quartz(height=6, width=3)
+print(Matrix_HeatMap_NMDS(Z_heat_ord, xlab="", ylab=""))
 #################################################################################
 #### LOOK AT PROB DETECTION AND SPECIES-SPECIFIC COVARIATE EFFECT POSTERIORS ####
 #################################################################################
