@@ -280,6 +280,7 @@ joes_metacom_f <- function(p_mean=0.50, iter=1, z.iter=1000){
       dump("z", file="inits.R")
       
       # Run the JAGS script file:
+      system("module load userApps/jags")
       system("jags jags.script.cmd")
       
       # read the coda files:
