@@ -5,6 +5,7 @@ library(permute, lib.loc = "/home/majo3748/Rpackages")
 library(vegan, lib.loc = "/home/majo3748/Rpackages")
 library(metacom, lib.loc = "/home/majo3748/Rpackages")
 library(coda, lib.loc = "/home/majo3748/Rpackages")
+library(ggmcmc, lib.loc = "/home/majo3748/Rpackages")
 library(reshape2)
 library(plyr)
 
@@ -18,7 +19,7 @@ clusterCall( cl, function() Sys.info()[c("nodename","machine")])
 #Evaluate a function on each worker
 source("joes_metacom_f.R")
 
-xx <- clusterCall(cl, joes_metacom_f, z.iter=1)
+xx <- clusterCall(cl, joes_metacom_f, z.iter=1000, iter=1)
 save(xx,file='test.rdata')
 
 #Shutdown

@@ -1,6 +1,6 @@
 #!/bin/bash
 #PBS -N mpi_test
-#PBS -l walltime=01:00:00
+#PBS -l walltime=24:00:00
 #PBS -l nodes=1:ppn=12
 #PBS -j oe
 
