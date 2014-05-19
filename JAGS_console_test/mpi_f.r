@@ -19,7 +19,7 @@ clusterCall( cl, function() Sys.info()[c("nodename","machine")])
 #Evaluate a function on each worker
 source("joes_metacom_f.R")
 
-xx <- clusterCall(cl, joes_metacom_f, z.iter=1000, iter=1)
+xx <- clusterCall(cl, joes_metacom_f, z.iter=500, iter=5)
 save(xx,file='test.rdata')
 
 #Shutdown
