@@ -11,6 +11,7 @@ library(plyr)
 
 #Make the cluster
 cl <- makeCluster( mpi.universe.size(), type="MPI" )
+clusterSetRNGStream(cl, 123123)
 
 #Check the cluster - we should get a response from each worker
 clusterCall( cl, function() Sys.info()[c("nodename","machine")])
@@ -19,7 +20,7 @@ clusterCall( cl, function() Sys.info()[c("nodename","machine")])
 #Evaluate a function on each worker
 source("joes_metacom_f.R")
 
-xx <- clusterCall(cl, joes_metacom_f, z.iter=500, iter=5)
+xx <- clusterCall(cl, joes_metacom_f, z.iter=500, iter=4)
 save(xx,file='test.rdata')
 
 #Shutdown
