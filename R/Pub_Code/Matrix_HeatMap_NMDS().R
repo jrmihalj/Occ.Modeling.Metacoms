@@ -25,13 +25,14 @@ Matrix_HeatMap_NMDS <- function(matrix, xlab="Species", ylab="Site"){
   incidence <- ggplot(dataframe, aes(x=Species, y=Site, fill=Pres))+
     geom_tile(color=element_blank())+
     labs(x=xlab, y=ylab)+
-    scale_fill_gradient(low="white", high="black", na.value="transparent")+
+    scale_fill_gradient(name="Occupancy\nProbability",
+                        low="white", high="black", na.value="transparent")+
     theme_classic()+
-    theme(axis.text=element_blank(), axis.ticks=element_blank())+
-#     theme(axis.text.y=element_blank(), axis.ticks.y=element_blank())+
-#     scale_x_discrete(limits=c(1:length(Names)), labels=Names)+
-#     theme(axis.text.x=element_text(angle=60, vjust=0.5))+
-    theme(legend.position="none")#+
+    #theme(axis.text=element_blank(), axis.ticks=element_blank())+
+    theme(axis.text.y=element_blank(), axis.ticks.y=element_blank())+
+    scale_x_discrete(limits=c(1:length(Names)), labels=Names)+
+    theme(axis.text.x=element_text(vjust=0.5))#+
+    #theme(legend.position="none")#+
     #scale_y_reverse()
   
   L <- list(plot = incidence)

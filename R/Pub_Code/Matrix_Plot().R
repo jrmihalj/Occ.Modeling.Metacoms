@@ -11,9 +11,9 @@ Matrix_Plot <- function(matrix, xlab="Parasite Species", ylab="Host Individuals"
   ord_mat <- matrix
   #Need to number sites so the graph doesn't rearrange matrix
   rownames(ord_mat) <- as.factor(c(1:nrow(ord_mat)))
-#   Names <- NULL
-#   Names <- colnames(ord_mat)
-#   colnames(ord_mat) <- as.factor(1:length(Names))
+  Names <- NULL
+  Names <- colnames(ord_mat)
+  colnames(ord_mat) <- as.factor(1:length(Names))
   
   # melt() changes the data into a data.frame that ggplot2 can read for the heat map
   dataframe <- melt(ord_mat)
@@ -26,9 +26,9 @@ Matrix_Plot <- function(matrix, xlab="Parasite Species", ylab="Host Individuals"
     scale_fill_discrete(h=c(0, 180), h.start=0, l=c(100,0), c=0)+
     theme_classic()+
     theme(axis.text.y=element_blank(), axis.ticks.y=element_blank())+
-    #scale_x_discrete(limits=c(1:length(Names)), labels=Names)+ #Optional to label species
-    #theme(axis.text.x=element_text(angle=60, vjust=0.5))+
-    theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())+
+    scale_x_discrete(limits=c(1:length(Names)), labels=Names)+ #Optional to label species
+    theme(axis.text.x=element_text(vjust=0.5))+
+    #theme(axis.text.x=element_blank(), axis.ticks.x=element_blank())+
     theme(legend.position="none")+
     scale_y_reverse()
   
