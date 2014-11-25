@@ -6,6 +6,9 @@ ssh majo3748@login.rc.colorado.edu
 cd /projects/majo3748/joe_occ/covariate_dist
 cd /projects/majo3748/joe_occ/jags_test
 
+module load slurm
+
+
 # How to submit an MPI job in R
 module load moab/moab-7.2.2
 module load torque/torque-4.2.3
@@ -22,7 +25,7 @@ qsub -q janus-small mpi_call.sh
 
 # need to go wider, maybe due to memory issues
 # so, what if we did 4 iterations per core
-# 4 iterations/core X 12 cores/node X 21 nodes = 1008 iterations 
+# 4 iterations/core X 12 cores/node X 21 nodes = 1008 iterations
 # should be ~ 4 X 3.5 = 14 hours per core
 
 
@@ -34,7 +37,7 @@ scp majo3748@login.rc.colorado.edu:/projects/majo3748/joe_occ/covariate_dist/tes
 scp majo3748@login.rc.colorado.edu:/projects/majo3748/abm/test.rdata ~/Documents/manuscripts/abm/continuous_time/
 
 
-## installing stuff 
+## installing stuff
 
 # start interactive session on compile node
 qsub -I -q janus-compile1
