@@ -25,6 +25,7 @@ showq -r -u majo3748
 
 # download a file
 scp majo3748@login.rc.colorado.edu:/projects/majo3748/joe_occ/covariate_dist/test.rdata ~/Desktop/
+scp majo3748@login.rc.colorado.edu:/projects/majo3748/abm/test.rdata ~/Documents/manuscripts/abm/continuous_time/
 
 
 ## installing stuff 
