@@ -365,8 +365,9 @@ frac <- ggplot(Str.Counts, aes(x=ID, y=Freq, fill=Structure2))+
   theme_classic()+
   labs(x="", y="")+
   scale_fill_grey(breaks=paste(Str.Counts$Structure),
-                    labels=c("Clementsian: 65.3%", "Quasi-Clementsian: 6.7%", "Gleasonian: 3.9%",
-                             "Quasi-Gleasonian: 0.1%", "Quasi-Nested: 0.3%", "Random: 23.7%"))+
+                    labels=c("Clementsian: 65.3% (Z structure)", "Quasi-Clementsian: 6.7%", "Gleasonian: 3.9%",
+                             "Quasi-Gleasonian: 0.1%", "Quasi-Nested: 0.3%", 
+                             "Random: 23.7% (Y structure)"))+
   theme(axis.title.x=element_blank(), axis.ticks.x=element_blank(),
         axis.text.y=element_text(angle=90, hjust=0.5), 
         axis.text.x=element_blank(), legend.title=element_blank())
