@@ -20,6 +20,12 @@ qsub -q janus-small mpi_call.sh
 # 200 cores X 5 iterations per core = 1000 iterations
 # 5 iterations X 3.5 hours/iteration = 17.5 hours
 
+# need to go wider, maybe due to memory issues
+# so, what if we did 4 iterations per core
+# 4 iterations/core X 12 cores/node X 21 nodes = 1008 iterations 
+# should be ~ 4 X 3.5 = 14 hours per core
+
+
 # check status
 showq -r -u majo3748
 

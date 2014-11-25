@@ -4,7 +4,7 @@
 # Number of Z_matrices to have metacommunity structure assessed defined by z.iter
 #   - as is coded, max(z.iter)=1000
 
-joes_metacom_f <- function(p_mean=0.50, iter=1, z.iter=1000){
+joes_metacom_f <- function(N.species=12, p_mean=0.50, iter=1, z.iter=1000){
   
   # Establish some useful functions:
   Logit <- function(x){
@@ -72,9 +72,9 @@ joes_metacom_f <- function(p_mean=0.50, iter=1, z.iter=1000){
   for(i in 1:iter){
     
     # Establish basic parameters for the simulation:
-    N <- 12 # Number of species
+    N <- N.species # Number of species
     K <- 75 # Number of sites
-    J <- 4  # Number of sampling replicates per site
+    J <- 3  # Number of sampling replicates per site
     
     # Fixed occurrence across species, in logit space
     b0 <- rep(Logit(0.6), N) # Change if desired
@@ -253,23 +253,13 @@ joes_metacom_f <- function(p_mean=0.50, iter=1, z.iter=1000){
       K = ncol(Y)
       N = nrow(Y)
       J = J
-      # current working directory:
-      current_dir <- paste(getwd())
       
-      # Make a new working directory (unique per node) name:
-      wd.name <- paste("iter", runif(1,1,10), sep="_")
-      system(paste("mkdir", wd.name, sep=" "))
-      
-      # Copy JAGS script files to new working directory:
-      system(paste("cp", "./jags.script.cmd", paste("./", wd.name, "/jags.script.cmd", sep="")))
-      system(paste("cp", "./OccMod_SingleYear.txt", paste("./", wd.name, "/OccMod_SingleYear.txt", sep="")))
-      
-      # Now change working directory to new one:
-      setwd(paste("./", wd.name, sep=""))
-      
-      # Write a file of the data:
-      dump(c("X", "Y", "K", "N", "J"), file="data.R")
-      
+      # create unique identifier for iteration
+      uniqueID <- paste(i, "-", runif(1, 0, 1), sep="")
+
+      # make a data file with unique name
+      dump(c("X", "Y", "K", "N", "J"), file=paste(uniqueID, "data.R", sep="_"))
+
       # Set initial parameters:
       # Z values (unobserved)
       zinit <- NULL
@@ -277,17 +267,35 @@ joes_metacom_f <- function(p_mean=0.50, iter=1, z.iter=1000){
       z = zinit
       
       # Write a file of the inits:
-      dump("z", file="inits.R")
+      dump("z", file=paste(uniqueID, "inits.R", sep="_"))
+
+      # write a unique jags.cmd file that refers to the data and initial values
+      cat(paste('model in "OccMod_SingleYear.txt"
+data in "', uniqueID, '_data.R"
+compile, nchains(3)
+parameters in "', uniqueID, '_inits.R"
+initialize
+adapt 1000
+update 5000
+monitor p, thin(10)
+monitor z, thin(10)
+update 10000
+coda *, stem(', uniqueID, ')
+exit', 
+                sep=""), 
+          file=paste(uniqueID, "jags.cmd", sep=""))
       
       # Run the JAGS script file:
-      system("module load userApps/jags")
-      system("jags jags.script.cmd")
+      system(paste("jags ", uniqueID, "jags.cmd", sep=""))
       
       # read the coda files:
       ch1 <- NULL; ch2 <- NULL; ch3 <- NULL;
-      ch1 <- read.coda("CODAchain1.txt", "CODAindex.txt", quiet=T)
-      ch2 <- read.coda("CODAchain2.txt", "CODAindex.txt", quiet=T)
-      ch3 <- read.coda("CODAchain3.txt", "CODAindex.txt", quiet=T)
+      ch1 <- read.coda(output.file = paste(uniqueID, "chain1.txt", sep=""), 
+                       index.file = paste(uniqueID, "index.txt", sep=""), quiet=T)
+      ch2 <- read.coda(output.file = paste(uniqueID, "chain2.txt", sep=""), 
+                       index.file = paste(uniqueID, "index.txt", sep=""), quiet=T)
+      ch3 <- read.coda(output.file = paste(uniqueID, "chain3.txt", sep=""), 
+                       index.file = paste(uniqueID, "index.txt", sep=""), quiet=T)
       
       out <- NULL
       out <- mcmc.list(list(ch1, ch2, ch3))
@@ -299,10 +307,8 @@ joes_metacom_f <- function(p_mean=0.50, iter=1, z.iter=1000){
       post.p <- ggs(out, family="p")
       Rhat_p <- get_Rhat(post.p)
       
-      # Re-set working directory:
-      setwd("../")
       # Delete all newly created files and directory:
-      system(paste("rm -r", wd.name, sep=" "))
+      system(paste("rm ", uniqueID, "*", sep=""))
       
       # If not converged:
       if(any(Rhat_p > 1.1)){
@@ -453,4 +459,4 @@ joes_metacom_f <- function(p_mean=0.50, iter=1, z.iter=1000){
 }
 
 # test <- NULL
-# test <- joes_metacom_f(p_mean=0.5, iter=1, z.iter=50)
+# test <- joes_metacom_f(p_mean=0.5, iter=1, z.iter=5)

@@ -103,7 +103,9 @@ mat_Z <- NULL
 mat_Y <- NULL
 # Transpose to fit requirements of 'metacom' and 'vegan' packages
 mat_Z <- aperm(Z, c(2,1))
+colnames(mat_Z) <- LETTERS[1:N]
 mat_Y <- aperm(Y, c(2,1))
+colnames(mat_Y) <- LETTERS[1:N]
 # Convert to zeros or ones (instead of binomial output)
 #mat_Z <- ifelse(mat_Z > 0, 1, 0)
 mat_Y <- ifelse(mat_Y > 0, 1, 0)
@@ -363,8 +365,9 @@ frac <- ggplot(Str.Counts, aes(x=ID, y=Freq, fill=Structure2))+
   theme_classic()+
   labs(x="", y="")+
   scale_fill_grey(breaks=paste(Str.Counts$Structure),
-                    labels=c("Clementsian: 65.3%", "Quasi-Clementsian: 6.7%", "Gleasonian: 3.9%",
-                             "Quasi-Gleasonian: 0.1%", "Quasi-Nested: 0.3%", "Random: 23.7%"))+
+                    labels=c("Clementsian: 65.3% (Z structure)", "Quasi-Clementsian: 6.7%", "Gleasonian: 3.9%",
+                             "Quasi-Gleasonian: 0.1%", "Quasi-Nested: 0.3%", 
+                             "Random: 23.7% (Y structure)"))+
   theme(axis.title.x=element_blank(), axis.ticks.x=element_blank(),
         axis.text.y=element_text(angle=90, hjust=0.5), 
         axis.text.x=element_blank(), legend.title=element_blank())
@@ -390,10 +393,11 @@ Z_heat.CCA <- decorana(Z_heat, ira=0) # CHECK CONVERGENCE, ETC.
 Z_heat.CCA.sites <- Z_heat.CCA$rproj[, 1]
 Z_heat.CCA.spp <- Z_heat.CCA$cproj[, 1]
 
+colnames(Z_heat) <- LETTERS[1:N]
 Z_heat_ord <- Z_heat[order(Z_heat.CCA.sites, decreasing = FALSE), 
                      order(Z_heat.CCA.spp, decreasing = FALSE)]
 
-quartz(height=6, width=3)
+quartz(height=6, width=4)
 print(Matrix_HeatMap_NMDS(Z_heat_ord, xlab="", ylab=""))
 #################################################################################
 #### LOOK AT PROB DETECTION AND SPECIES-SPECIFIC COVARIATE EFFECT POSTERIORS ####
@@ -423,7 +427,8 @@ head(post.b)
 library(mcmcplots)
 
 quartz(height=5, width=7)
-caterplot(out2, parms="p", col="black", val.lim=c(0, 1))
+caterplot(out2, parms="p", col="black", val.lim=c(0, 1),
+          labels=paste(LETTERS[1:N], sep=""), )
 caterpoints(p0)
 
 
