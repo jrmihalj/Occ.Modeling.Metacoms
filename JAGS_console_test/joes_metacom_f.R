@@ -4,7 +4,7 @@
 # Number of Z_matrices to have metacommunity structure assessed defined by z.iter
 #   - as is coded, max(z.iter)=1000
 
-joes_metacom_f <- function(p_mean=0.50, iter=1, z.iter=1000){
+joes_metacom_f <- function(N.species=12, p_mean=0.50, iter=1, z.iter=1000){
   
   # Establish some useful functions:
   Logit <- function(x){
@@ -72,9 +72,9 @@ joes_metacom_f <- function(p_mean=0.50, iter=1, z.iter=1000){
   for(i in 1:iter){
     
     # Establish basic parameters for the simulation:
-    N <- 12 # Number of species
+    N <- N.species # Number of species
     K <- 75 # Number of sites
-    J <- 4  # Number of sampling replicates per site
+    J <- 3  # Number of sampling replicates per site
     
     # Fixed occurrence across species, in logit space
     b0 <- rep(Logit(0.6), N) # Change if desired
