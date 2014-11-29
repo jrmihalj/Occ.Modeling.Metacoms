@@ -5,8 +5,25 @@ ssh majo3748@login.rc.colorado.edu
 # change to the projects folder
 cd /projects/majo3748/joe_occ/covariate_dist
 cd /projects/majo3748/joe_occ/jags_test
+cd /projects/majo3748/grazing/stan
 
 module load slurm
+
+# qsub is backwards compatible
+qsub -q janus mpi_call.sh
+
+# check status
+squeue -u $USER
+
+# onerun with 24 species works fine with a wall time of 7 hours
+# that's 7000 compute hours
+# we want to get 1000 iterations, so if we do three iterations per core
+
+# start with 100 iterations
+# so, with 5 X 12 = 60 processors
+# let's do 2 iterations on each
+# to get 120 iterations
+# so, up the wall time to 14 hours, and use 5 nodes X 12 ppn
 
 
 # How to submit an MPI job in R
@@ -35,6 +52,7 @@ showq -r -u majo3748
 # download a file
 scp majo3748@login.rc.colorado.edu:/projects/majo3748/joe_occ/covariate_dist/test.rdata ~/Desktop/
 scp majo3748@login.rc.colorado.edu:/projects/majo3748/abm/test.rdata ~/Documents/manuscripts/abm/continuous_time/
+scp majo3748@login.rc.colorado.edu:/projects/majo3748/joe_occ/jags_test/test.rdata ~/Desktop/
 
 
 ## installing stuff
@@ -45,7 +63,8 @@ qsub -I -q janus-compile1
 
 install.packages("rjags", lib="~/Rpackages")
 
-
+# stan installation directory
+~/R/x86_64-unknown-linux-gnu-library/3.1
 
 wget URL_of_file XXX.tar.gz
 tar xzf XXX.tar.gz
