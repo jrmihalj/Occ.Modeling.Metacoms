@@ -4,7 +4,8 @@
 # Number of Z_matrices to have metacommunity structure assessed defined by z.iter
 #   - as is coded, max(z.iter)=1000
 
-joes_metacom_f <- function(N.species=12, p_mean=0.50, iter=1, z.iter=1000){
+joes_metacom_f <- function(N.species=12, p_mean=0.50, iter=1, 
+                           z.iter=1000, null.method="quasiswap"){
   
   # Establish some useful functions:
   Logit <- function(x){
@@ -148,9 +149,9 @@ joes_metacom_f <- function(N.species=12, p_mean=0.50, iter=1, z.iter=1000){
     TurnZY <- array(0, dim=c(5, 2)) # 2 Columns: Z and Y
     BoundZY <- array(0, dim=c(3, 2)) # 2 Coumns: Z and Y
     
-    meta_Z <- tryCatch(Metacommunity(mat_Z, method="r1", sims=1000, allow.empty=T),
+    meta_Z <- tryCatch(Metacommunity(mat_Z, method=null.method, sims=1000, allow.empty=T),
                        error = function(e){"ERROR"})
-    meta_Y <- tryCatch(Metacommunity(mat_Y, method="r1", sims=1000, allow.empty=T),
+    meta_Y <- tryCatch(Metacommunity(mat_Y, method=null.method, sims=1000, allow.empty=T),
                        error = function(e){"ERROR"})
     
     ####################################
@@ -361,7 +362,7 @@ exit',
           Turn.Zpost <- NULL
           Bound.Zpost <- NULL
           
-          meta_Zpost <- tryCatch(Metacommunity(mat_Zpost, method="r1", sims=1000, allow.empty=T),
+          meta_Zpost <- tryCatch(Metacommunity(mat_Zpost, method=null.method, sims=1000, allow.empty=T),
                                  error = function(e){"ERROR"})
           
           ####################################
