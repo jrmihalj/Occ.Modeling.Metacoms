@@ -112,6 +112,99 @@ plot2_p.5_J3 <- ggplot(df2_Zpost_p.5_J3, aes(x=Z, y=ZPmatchZ))+
 quartz(height=5, width=8)
 print(plot2_p.5_J3)
   
-  
-  
-  
+#------------------------------------------------------------------------------#
+
+# Which Y were non-coherent? And which percentage of these had a corresponding Z 
+# that was coherent? 
+
+table(ZY_p.5_J3[,2])
+# 103 Random Y's (ZY_p.5_J3)
+
+length(which(ZY_p.5_J3[,1]!="Random" & ZY_p.5_J3[,2]=="Random"))
+# 70 Random Y's where Z was not Random (ZY_p.5_J3)
+
+ZY_p.5_J3[which(ZY_p.5_J3[,1]!="Random" & ZY_p.5_J3[,2]=="Random"), ]
+# Occurs for all sorts of structures (ZY_p.5_J3)
+
+#------------------------------------------------------------------------------#
+
+# Assessment of "egregious errors":
+
+# How many times did a positvely coherent Z result in negative coherent Y?
+length(which(ZY_p.5_J3[,2]=="Checkerboard"))
+# 0/44 possible (ZY_p.5_J3)
+
+# How many times did a Nested result in Gleasonian or Clementsian? (and vice versa)
+length(which(ZY_p.5_J3[,1]=="Nested" & ZY_p.5_J3[,2]!="Nested"))
+ZY_p.5_J3[which(ZY_p.5_J3[,1]=="Nested" & ZY_p.5_J3[,2]!="Nested"), ]
+# None (although one nested went random) (ZY_p.5_J3)
+length(which(ZY_p.5_J3[,1]=="Quasi-Nested" & ZY_p.5_J3[,2]!="Quasi-Nested"))
+ZY_p.5_J3[which(ZY_p.5_J3[,1]=="Quasi-Nested" & ZY_p.5_J3[,2]!="Quasi-Nested"), ]
+# Quasi-Nested becomes Quasi-Clementsian or Clementsian 5 times (ZY_p.5_J3)
+
+
+length(which(ZY_p.5_J3[,1]=="Gleasonian" & (ZY_p.5_J3[,2]=="Nested" | ZY_p.5_J3[,2]=="Quasi-Nested")))
+# 1 instance of Gleasonian becoming Quasi-Nested
+length(which(ZY_p.5_J3[,1]=="Quasi-Gleasonian" & (ZY_p.5_J3[,2]=="Nested" | ZY_p.5_J3[,2]=="Quasi-Nested")))
+# 6 instances of Quasi-Gleas. becoming Quasi-Nested
+length(which(ZY_p.5_J3[,1]=="Clementsian" & (ZY_p.5_J3[,2]=="Nested" | ZY_p.5_J3[,2]=="Quasi-Nested")))
+# 3 instances of Clementsian becoming Quasi-Nested
+length(which(ZY_p.5_J3[,1]=="Quasi-Clementsian" & (ZY_p.5_J3[,2]=="Nested" | ZY_p.5_J3[,2]=="Quasi-Nested")))
+# 6 instances of Quasi-Clementsian becoming Quasi-Nested
+
+# However, in all instances, the Z.post better represents Z than Y structure.
+
+# Did any Clementsian result in EvenSpaced (i.e. clumped to hyperdispersed)?
+length(which((ZY_p.5_J3[,1]=="Clementsian" | ZY_p.5_J3[,1]=="Quasi-Clementsian") & 
+               ZY_p.5_J3[,2]=="EvenSpaced"))
+# 0 
+
+#------------------------------------------------------------------------------#
+
+# Figure out which structures each structure can be confused with due to detection
+# errors:
+
+table(ZY_p.5_J3[ZY_p.5_J3[,1]=="Gleasonian", 2]) # 352 total Gleasonian
+# Clementsian        EvenSpaced        Gleasonian 
+# 177                 2               137 
+# Quasi-Clementsian  Quasi-Gleasonian      Quasi-Nested 
+# 17                 8                 1 
+# Random 
+# 10 
+
+table(ZY_p.5_J3[ZY_p.5_J3[,1]=="Quasi-Gleasonian", 2]) # 22
+# Clementsian Quasi-Clementsian  Quasi-Gleasonian 
+# 6                 3                 2 
+# Quasi-Nested      Random 
+# 6                 5
+
+
+table(ZY_p.5_J3[ZY_p.5_J3[,1]=="Clementsian", 2]) # 536
+# Clementsian        Gleasonian Quasi-Clementsian 
+# 410                48                31 
+# Quasi-Gleasonian      Quasi-Nested  Random 
+# 1                 3                 43
+
+table(ZY_p.5_J3[ZY_p.5_J3[,1]=="Quasi-Clementsian", 2]) # 30
+# Clementsian Quasi-Clementsian      Quasi-Nested 
+# 10                 7                 6 
+# Random 
+# 7
+
+
+table(ZY_p.5_J3[ZY_p.5_J3[,1]=="Nested" | ZY_p.5_J3[,1]=="Quasi-Nested", 2])
+# Clementsian Quasi-Clementsian      Quasi-Nested 
+# 2                 3                 9 
+# Random 
+# 5
+
+table(ZY_p.5_J3[ZY_p.5_J3[,1]=="EvenSpaced", 2]) # 5
+# Clementsian  Gleasonian 
+# 2           3
+
+table(ZY_p.5_J3[ZY_p.5_J3[,1]=="Random", 2]) # 44
+# Clementsian        Gleasonian Quasi-Clementsian 
+# 7                 1                 3 
+# Random 
+# 33
+
